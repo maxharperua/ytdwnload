@@ -39,6 +39,7 @@ services:
     restart: unless-stopped
     ports:
       - "80:80"
+      - "443:443"
     volumes:
       - type: bind
         source: ./
@@ -46,6 +47,10 @@ services:
       - type: bind
         source: ./docker/nginx/conf.d
         target: /etc/nginx/conf.d
+      - type: bind
+        source: /etc/letsencrypt
+        target: /etc/letsencrypt
+        read_only: true
     networks:
       - laravel_net
 
