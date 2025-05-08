@@ -17,10 +17,16 @@
             <div id="error-block" class="alert alert-danger mt-3" style="display:none;"></div>
             <div id="cancelled-block" style="display:none;">
                 <div class="alert alert-warning">Генерация отменена.</div>
-                <a href="/download" class="btn btn-outline-secondary">← Назад к выбору видео</a>
+                <form action="{{ route('youtube.index') }}" method="POST" style="display: inline;">
+                    @csrf
+                    <button type="submit" class="btn btn-outline-secondary">← Назад к выбору видео</button>
+                </form>
             </div>
             <div class="mt-4">
-                <a href="/download" class="btn btn-outline-secondary">← Назад к выбору видео</a>
+                <form action="{{ route('youtube.index') }}" method="POST" style="display: inline;">
+                    @csrf
+                    <button type="submit" class="btn btn-outline-secondary">← Назад к выбору видео</button>
+                </form>
             </div>
         </div>
     </div>

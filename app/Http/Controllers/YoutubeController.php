@@ -10,6 +10,10 @@ class YoutubeController extends Controller
 {
     public function index()
     {
+        $videoUrl = session('video_url');
+        if ($videoUrl) {
+            return $this->download(new Request(['url' => $videoUrl]));
+        }
         return view('youtube.index');
     }
 

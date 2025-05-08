@@ -10,6 +10,7 @@ use App\Http\Controllers\DownloadController;
 // });
 
 Route::get('/', [YoutubeController::class, 'index'])->name('youtube.index');
+Route::post('/', [YoutubeController::class, 'index'])->name('youtube.index');
 Route::post('/download', [YoutubeController::class, 'download'])->name('youtube.download');
 Route::get('/download/{format}', [YoutubeController::class, 'downloadFormat'])->name('youtube.download.format');
 
