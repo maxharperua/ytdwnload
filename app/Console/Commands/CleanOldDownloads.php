@@ -14,7 +14,7 @@ class CleanOldDownloads extends Command
 
     public function handle()
     {
-        $threshold = Carbon::now()->subMinute();
+        $threshold = Carbon::now()->subHour();
         $tasks = DownloadTask::whereIn('status', ['finished', 'error'])
             ->where('created_at', '<', $threshold)
             ->get();
@@ -32,7 +32,8 @@ class CleanOldDownloads extends Command
                     'task_id' => $task->id,
                     'file_path' => $task->file_path,
                     'full_path' => $fullPath,
-                    'exists' => file_exists($fullPath)
+                    'exists' => file_exists($fullPath),
+                    'created_at' => $task->created_at
                 ]);
                 
                 if (file_exists($fullPath)) {
