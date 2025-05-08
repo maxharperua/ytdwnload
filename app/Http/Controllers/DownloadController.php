@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\DownloadTask;
 use App\Jobs\DownloadVideoJob;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class DownloadController extends Controller
 {
@@ -45,13 +46,13 @@ class DownloadController extends Controller
     }
 
     // Скачивание готового файла
-    public function file($id)
+    public function file(DownloadTask $task)
     {
-        $task = DownloadTask::findOrFail($id);
-        if ($task->status !== 'finished' || !$task->file_path || !file_exists($task->file_path)) {
-            abort(404);
+        if (!$task->file_path || !Storage::exists($task->file_path)) {
+            abort(404, 'Файл не найден');
         }
-        return response()->download($task->file_path, 'video.mp4')->deleteFileAfterSend(true);
+
+        return Storage::download($task->file_path);
     }
 
     // Отмена задачи

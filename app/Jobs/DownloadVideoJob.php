@@ -9,6 +9,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class DownloadVideoJob implements ShouldQueue
 {
@@ -75,11 +76,17 @@ class DownloadVideoJob implements ShouldQueue
             
             Log::info('Selected format found', ['format' => $selectedFormat]);
             
+            // Создаем временную директорию в storage
+            $tmpDir = storage_path('app/tmp');
+            if (!file_exists($tmpDir)) {
+                mkdir($tmpDir, 0777, true);
+            }
+            
             // Если формат содержит и видео, и аудио — просто скачиваем
             if (isset($selectedFormat['vcodec']) && $selectedFormat['vcodec'] !== 'none' && 
                 isset($selectedFormat['acodec']) && $selectedFormat['acodec'] !== 'none') {
                 
-                $tmpOutput = "/tmp/merged_" . uniqid() . ".mp4";
+                $tmpOutput = $tmpDir . '/merged_' . uniqid() . '.mp4';
                 $cmd = "yt-dlp -f " . escapeshellarg($format) . " -o " . escapeshellarg($tmpOutput) . " " . 
                        escapeshellarg($videoUrl) . " --no-warnings --no-playlist --no-check-certificate " .
                        "--progress-template '%(progress._percent_str)s' --newline";
@@ -129,9 +136,9 @@ class DownloadVideoJob implements ShouldQueue
                 
                 Log::info('Best audio format found', ['format' => $bestAudio]);
                 
-                $tmpVideo = "/tmp/video_" . uniqid() . ".mp4";
-                $tmpAudio = "/tmp/audio_" . uniqid() . ".m4a";
-                $tmpOutput = "/tmp/merged_" . uniqid() . ".mp4";
+                $tmpVideo = $tmpDir . '/video_' . uniqid() . '.mp4';
+                $tmpAudio = $tmpDir . '/audio_' . uniqid() . '.m4a';
+                $tmpOutput = $tmpDir . '/merged_' . uniqid() . '.mp4';
                 
                 // Скачиваем видео
                 $videoCmd = "yt-dlp -f " . escapeshellarg($selectedFormat['format_id']) . " -o " . 
@@ -203,7 +210,12 @@ class DownloadVideoJob implements ShouldQueue
                 throw new \Exception('Не удалось создать итоговый файл');
             }
             
-            $task->file_path = $tmpOutput;
+            // Перемещаем файл в постоянное хранилище
+            $finalPath = 'downloads/' . basename($tmpOutput);
+            Storage::put($finalPath, file_get_contents($tmpOutput));
+            @unlink($tmpOutput);
+            
+            $task->file_path = $finalPath;
             $task->progress = 100;
             $task->status = 'finished';
             $task->save();
