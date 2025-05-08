@@ -242,11 +242,18 @@ class DownloadVideoJob implements ShouldQueue
                 throw new \Exception('Не удалось сохранить файл: ' . $fullPath);
             }
             
+            // Устанавливаем правильного владельца
+            chown($fullPath, 'www-data');
+            chgrp($fullPath, 'www-data');
+            chmod($fullPath, 0664);
+            
             Log::info('File saved directly', [
                 'path' => $fullPath,
                 'exists' => file_exists($fullPath),
                 'size' => file_exists($fullPath) ? filesize($fullPath) : 0,
-                'permissions' => file_exists($fullPath) ? substr(sprintf('%o', fileperms($fullPath)), -4) : null
+                'permissions' => file_exists($fullPath) ? substr(sprintf('%o', fileperms($fullPath)), -4) : null,
+                'owner' => file_exists($fullPath) ? posix_getpwuid(fileowner($fullPath))['name'] : null,
+                'group' => file_exists($fullPath) ? posix_getgrgid(filegroup($fullPath))['name'] : null
             ]);
             
             @unlink($tmpOutput);

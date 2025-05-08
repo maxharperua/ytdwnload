@@ -51,19 +51,30 @@ class DownloadController extends Controller
         \Log::info('Attempting to download file', [
             'task_id' => $task->id,
             'file_path' => $task->file_path,
-            'exists' => $task->file_path ? Storage::exists($task->file_path) : false,
-            'status' => $task->status
+            'storage_exists' => $task->file_path ? Storage::exists($task->file_path) : false,
+            'physical_exists' => $task->file_path ? file_exists(storage_path('app/' . $task->file_path)) : false,
+            'status' => $task->status,
+            'storage_path' => $task->file_path ? storage_path('app/' . $task->file_path) : null,
+            'permissions' => $task->file_path && file_exists(storage_path('app/' . $task->file_path)) 
+                ? substr(sprintf('%o', fileperms(storage_path('app/' . $task->file_path))), -4) 
+                : null
         ]);
 
         if (!$task->file_path) {
             abort(404, 'Путь к файлу не указан');
         }
 
-        if (!Storage::exists($task->file_path)) {
-            abort(404, 'Файл не найден в storage: ' . $task->file_path);
+        $fullPath = storage_path('app/' . $task->file_path);
+        
+        if (!file_exists($fullPath)) {
+            abort(404, 'Файл не найден физически: ' . $fullPath);
         }
 
-        return Storage::download($task->file_path, null, [], 'inline');
+        if (!is_readable($fullPath)) {
+            abort(403, 'Файл не доступен для чтения: ' . $fullPath);
+        }
+
+        return response()->download($fullPath, null, [], 'inline');
     }
 
     // Отмена задачи
