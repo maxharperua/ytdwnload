@@ -1,7 +1,10 @@
-FROM php:8.2-fpm
+FROM php:8.2-fpm-bullseye
 
-# Установка системных зависимостей
-RUN apt-get update && apt-get install -y \
+# Обновление GPG-ключей и установка системных зависимостей
+RUN apt-get update && apt-get install -y gnupg2 && \
+    apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 0E98404D386FA1D9 && \
+    apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 6ED0E7B82643E131 && \
+    apt-get update && apt-get install -y \
     git \
     curl \
     libpng-dev \
@@ -41,4 +44,4 @@ RUN chown -R www-data:www-data /var/www \
 # Открытие порта 9000
 EXPOSE 9000
 
-CMD ["php-fpm"] 
+CMD ["php-fpm"]
