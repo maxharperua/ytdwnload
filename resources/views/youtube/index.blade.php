@@ -91,7 +91,7 @@
                        class="form-control" 
                        placeholder="Введите ссылку на YouTube видео" 
                        required
-                       value="{{ old('url') }}">
+                       value="{{ old('url') ?? (isset($videoUrl) ? $videoUrl : '') }}">
                 @error('url')
                     <div class="text-danger">{{ $message }}</div>
                 @enderror
@@ -131,7 +131,7 @@
                             @else
                                 <form class="download-form" method="POST" action="{{ route('download.start') }}">
                                     @csrf
-                                    <input type="hidden" name="url" value="{{ request('url') ?? old('url') }}">
+                                    <input type="hidden" name="url" value="{{ request('url') ?? old('url') ?? (isset($videoUrl) ? $videoUrl : '') }}">
                                     <input type="hidden" name="format" value="{{ $format['itag'] }}">
                                     <button type="submit" class="btn btn-success">Скачать</button>
                                 </form>

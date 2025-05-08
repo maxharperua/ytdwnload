@@ -17,7 +17,7 @@ class YoutubeController extends Controller
             $request->headers->set('X-CSRF-TOKEN', csrf_token());
             return $this->download($request);
         }
-        return view('youtube.index');
+        return view('youtube.index', ['videoUrl' => $videoUrl]);
     }
 
     public function download(Request $request)
