@@ -51,6 +51,14 @@ services:
         source: /etc/letsencrypt
         target: /etc/letsencrypt
         read_only: true
+      - type: bind
+        source: /etc/letsencrypt/options-ssl-nginx.conf
+        target: /etc/letsencrypt/options-ssl-nginx.conf
+        read_only: true
+      - type: bind
+        source: /etc/letsencrypt/ssl-dhparams.pem
+        target: /etc/letsencrypt/ssl-dhparams.pem
+        read_only: true
     networks:
       - laravel_net
 
