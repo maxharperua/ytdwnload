@@ -6,6 +6,7 @@ use App\Models\DownloadTask;
 use App\Jobs\DownloadVideoJob;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 
 class DownloadController extends Controller
 {
@@ -46,35 +47,57 @@ class DownloadController extends Controller
     }
 
     // Скачивание готового файла
-    public function file(DownloadTask $task)
+    public function file($id)
     {
-        \Log::info('Attempting to download file', [
-            'task_id' => $task->id,
+        Log::info('Attempting to download file', ['task_id' => $id]);
+        
+        $task = DownloadTask::findOrFail($id);
+        Log::info('Task found', [
+            'task_id' => $id,
             'file_path' => $task->file_path,
-            'storage_exists' => $task->file_path ? Storage::exists($task->file_path) : false,
-            'physical_exists' => $task->file_path ? file_exists(storage_path('app/' . $task->file_path)) : false,
             'status' => $task->status,
-            'storage_path' => $task->file_path ? storage_path('app/' . $task->file_path) : null,
-            'permissions' => $task->file_path && file_exists(storage_path('app/' . $task->file_path)) 
-                ? substr(sprintf('%o', fileperms(storage_path('app/' . $task->file_path))), -4) 
-                : null
+            'storage_path' => storage_path('app/' . $task->file_path),
+            'storage_exists' => Storage::exists($task->file_path),
+            'file_exists' => file_exists(storage_path('app/' . $task->file_path)),
+            'permissions' => file_exists(storage_path('app/' . $task->file_path)) ? substr(sprintf('%o', fileperms(storage_path('app/' . $task->file_path))), -4) : null,
+            'owner' => file_exists(storage_path('app/' . $task->file_path)) ? posix_getpwuid(fileowner(storage_path('app/' . $task->file_path)))['name'] : null,
+            'group' => file_exists(storage_path('app/' . $task->file_path)) ? posix_getgrgid(filegroup(storage_path('app/' . $task->file_path)))['name'] : null
         ]);
 
         if (!$task->file_path) {
-            abort(404, 'Путь к файлу не указан');
+            Log::error('File path is empty', ['task_id' => $id]);
+            abort(404);
         }
 
-        $fullPath = storage_path('app/' . $task->file_path);
-        
-        if (!file_exists($fullPath)) {
-            abort(404, 'Файл не найден физически: ' . $fullPath);
+        if (!Storage::exists($task->file_path)) {
+            Log::error('File does not exist in storage', [
+                'task_id' => $id,
+                'file_path' => $task->file_path,
+                'full_path' => storage_path('app/' . $task->file_path)
+            ]);
+            abort(404);
         }
 
-        if (!is_readable($fullPath)) {
-            abort(403, 'Файл не доступен для чтения: ' . $fullPath);
+        if ($task->status !== 'finished') {
+            Log::error('Task is not finished', [
+                'task_id' => $id,
+                'status' => $task->status
+            ]);
+            abort(404);
         }
 
-        return response()->download($fullPath, null, [], 'inline');
+        Log::info('File found, preparing download', [
+            'task_id' => $id,
+            'file_path' => $task->file_path,
+            'mime_type' => Storage::mimeType($task->file_path)
+        ]);
+
+        return response()->download(
+            storage_path('app/' . $task->file_path),
+            basename($task->file_path),
+            [],
+            'inline'
+        );
     }
 
     // Отмена задачи
