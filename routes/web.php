@@ -25,3 +25,6 @@ Route::get('/download/file/{id}', [DownloadController::class, 'file'])->name('do
 
 // Отмена задачи генерации
 Route::post('/download/cancel/{id}', [DownloadController::class, 'cancel'])->name('download.cancel');
+
+// Добавляем новый маршрут для удаления видео из сессии
+Route::post('/remove-video', [YoutubeController::class, 'removeVideo'])->name('youtube.remove_video');

@@ -1,10 +1,7 @@
 FROM php:8.2-fpm-bullseye
 
-# Обновление GPG-ключей и установка системных зависимостей
-RUN apt-get update && apt-get install -y gnupg2 && \
-    apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 0E98404D386FA1D9 && \
-    apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 6ED0E7B82643E131 && \
-    apt-get update && apt-get install -y \
+# Установка системных зависимостей
+RUN apt-get update && apt-get install -y \
     git \
     curl \
     libpng-dev \

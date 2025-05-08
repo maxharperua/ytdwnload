@@ -274,4 +274,10 @@ class YoutubeController extends Controller
             return back()->with('error', 'Ошибка: ' . $e->getMessage());
         }
     }
+
+    public function removeVideo(Request $request)
+    {
+        $request->session()->forget('video_url');
+        return redirect()->route('youtube.index');
+    }
 }
