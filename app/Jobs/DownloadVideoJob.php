@@ -225,20 +225,15 @@ class DownloadVideoJob implements ShouldQueue
                 throw new \Exception('Временный файл не найден: ' . $tmpOutput);
             }
             
-            $content = file_get_contents($tmpOutput);
-            if ($content === false) {
-                throw new \Exception('Не удалось прочитать временный файл');
-            }
-            
             // Проверяем, существует ли директория
             $dirPath = storage_path('app/downloads');
             if (!file_exists($dirPath)) {
                 mkdir($dirPath, 0777, true);
             }
             
-            // Сохраняем файл напрямую
+            // Сохраняем файл потоковым копированием
             $fullPath = storage_path('app/' . $finalPath);
-            if (file_put_contents($fullPath, $content) === false) {
+            if (!copy($tmpOutput, $fullPath)) {
                 throw new \Exception('Не удалось сохранить файл: ' . $fullPath);
             }
             
@@ -247,7 +242,7 @@ class DownloadVideoJob implements ShouldQueue
             chgrp($fullPath, 'www-data');
             chmod($fullPath, 0664);
             
-            Log::info('File saved directly', [
+            Log::info('File saved using stream copy', [
                 'path' => $fullPath,
                 'exists' => file_exists($fullPath),
                 'size' => file_exists($fullPath) ? filesize($fullPath) : 0,
