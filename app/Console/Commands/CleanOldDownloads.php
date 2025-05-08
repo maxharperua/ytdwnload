@@ -15,6 +15,8 @@ class CleanOldDownloads extends Command
     public function handle()
     {
         $threshold = Carbon::now()->subHour();
+        
+        // Удаляем старые задачи и их файлы
         $tasks = DownloadTask::whereIn('status', ['finished', 'error'])
             ->where('created_at', '<', $threshold)
             ->get();
@@ -49,7 +51,7 @@ class CleanOldDownloads extends Command
         }
         $this->info("Удалено задач: $deleted");
 
-        // Отменяем зависшие задачи (например, старше 15 минут)
+        // Отменяем зависшие задачи
         $stuck = DownloadTask::whereIn('status', ['pending', 'processing'])
             ->where('updated_at', '<', Carbon::now()->subMinutes(15))
             ->get();
@@ -69,5 +71,31 @@ class CleanOldDownloads extends Command
             }
             $task->delete();
         }
+
+        // Удаляем файлы, которые не имеют соответствующих записей в базе
+        $downloadsDir = storage_path('app/downloads');
+        if (is_dir($downloadsDir)) {
+            $files = glob($downloadsDir . '/*.mp4');
+            foreach ($files as $file) {
+                $filename = basename($file);
+                $exists = DownloadTask::where('file_path', 'downloads/' . $filename)->exists();
+                
+                if (!$exists) {
+                    Log::info('Found orphaned file', [
+                        'file' => $filename,
+                        'path' => $file
+                    ]);
+                    
+                    if (@unlink($file)) {
+                        Log::info('Orphaned file deleted', ['path' => $file]);
+                        $deleted++;
+                    } else {
+                        Log::error('Failed to delete orphaned file', ['path' => $file]);
+                    }
+                }
+            }
+        }
+        
+        $this->info("Всего удалено файлов: $deleted");
     }
 } 
