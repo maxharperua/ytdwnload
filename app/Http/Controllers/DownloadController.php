@@ -58,13 +58,14 @@ class DownloadController extends Controller
     public function cancel($id, Request $request)
     {
         $task = DownloadTask::findOrFail($id);
+        $success = false;
         if (in_array($task->status, ['pending', 'processing'])) {
-            $task->status = 'cancelled';
             if ($task->file_path && file_exists($task->file_path)) {
                 @unlink($task->file_path);
             }
-            $task->save();
+            $task->delete();
+            $success = true;
         }
-        return redirect($request->input('redirect_to', '/'))->with('success', 'Задача отменена.');
+        return response()->json(['success' => $success]);
     }
 } 

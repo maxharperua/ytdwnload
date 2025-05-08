@@ -33,9 +33,10 @@ class CleanOldDownloads extends Command
             ->where('updated_at', '<', Carbon::now()->subMinutes(15))
             ->get();
         foreach ($stuck as $task) {
-            $task->status = 'error';
-            $task->error = 'Задача автоматически завершена как зависшая.';
-            $task->save();
+            if ($task->file_path && file_exists($task->file_path)) {
+                @unlink($task->file_path);
+            }
+            $task->delete();
         }
     }
 } 

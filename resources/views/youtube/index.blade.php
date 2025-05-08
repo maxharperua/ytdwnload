@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>YouTube Video Downloader</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <style>
         body {
             background-color: #f8f9fa;
@@ -109,10 +110,7 @@
                 <h3>Доступные форматы:</h3>
                 <div class="list-group" id="formats-list">
                     @foreach($formats as $format)
-                        <form class="format-download-form d-flex justify-content-between align-items-center mb-2 p-2 rounded shadow-sm" style="background:#f4f6fb;" method="POST" action="{{ route('download.start') }}">
-                            @csrf
-                            <input type="hidden" name="url" value="{{ request('url') ?? old('url') }}">
-                            <input type="hidden" name="format" value="{{ $format['itag'] }}">
+                        <div class="format-block d-flex justify-content-between align-items-center mb-2 p-2 rounded shadow-sm" style="background:#f4f6fb;">
                             <div>
                                 <span class="badge bg-secondary me-2" style="font-size:1rem;">{{ $format['quality'] }}</span>
                                 <span class="text-muted" style="font-size:0.95rem;">{{ $format['mimeType'] }}</span>
@@ -125,16 +123,20 @@
                                     <a href="{{ route('download.progress', ['id' => $format['active_task_id']]) }}" class="btn btn-warning disabled-link">
                                         Генерация идёт...
                                     </a>
-                                    <form method="POST" action="{{ route('download.cancel', ['id' => $format['active_task_id']]) }}" onsubmit="return confirm('Отменить генерацию этого видео?');">
-                                        @csrf
-                                        <input type="hidden" name="redirect_to" value="/">
-                                        <button type="submit" class="btn btn-outline-danger">Отменить</button>
-                                    </form>
+                                    <button type="button" class="btn btn-outline-danger cancel-btn"
+                                        data-cancel-url="{{ route('download.cancel', ['id' => $format['active_task_id']]) }}">
+                                        Отменить
+                                    </button>
                                 </div>
                             @else
-                                <button type="submit" class="btn btn-success">Скачать</button>
+                                <form class="download-form" method="POST" action="{{ route('download.start') }}">
+                                    @csrf
+                                    <input type="hidden" name="url" value="{{ request('url') ?? old('url') }}">
+                                    <input type="hidden" name="format" value="{{ $format['itag'] }}">
+                                    <button type="submit" class="btn btn-success">Скачать</button>
+                                </form>
                             @endif
-                        </form>
+                        </div>
                     @endforeach
                 </div>
             </div>
@@ -150,6 +152,27 @@
                 if (urlInput && !form.querySelector('input[name="url"]').value) {
                     form.querySelector('input[name="url"]').value = urlInput.value;
                 }
+            });
+        });
+
+        // AJAX отмена генерации
+        document.querySelectorAll('.cancel-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                if (!confirm('Отменить генерацию этого видео?')) return;
+                fetch(btn.dataset.cancelUrl, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                        'Accept': 'application/json',
+                    }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        // Можно перерисовать только этот блок, но проще:
+                        location.reload();
+                    }
+                });
             });
         });
     </script>
