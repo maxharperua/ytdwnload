@@ -52,16 +52,17 @@ class DownloadController extends Controller
         Log::info('Attempting to download file', ['task_id' => $id]);
         
         $task = DownloadTask::findOrFail($id);
+        $fullPath = storage_path('app/' . $task->file_path);
+        
         Log::info('Task found', [
             'task_id' => $id,
             'file_path' => $task->file_path,
             'status' => $task->status,
-            'storage_path' => storage_path('app/' . $task->file_path),
-            'storage_exists' => Storage::exists($task->file_path),
-            'file_exists' => file_exists(storage_path('app/' . $task->file_path)),
-            'permissions' => file_exists(storage_path('app/' . $task->file_path)) ? substr(sprintf('%o', fileperms(storage_path('app/' . $task->file_path))), -4) : null,
-            'owner' => file_exists(storage_path('app/' . $task->file_path)) ? posix_getpwuid(fileowner(storage_path('app/' . $task->file_path)))['name'] : null,
-            'group' => file_exists(storage_path('app/' . $task->file_path)) ? posix_getgrgid(filegroup(storage_path('app/' . $task->file_path)))['name'] : null
+            'full_path' => $fullPath,
+            'file_exists' => file_exists($fullPath),
+            'permissions' => file_exists($fullPath) ? substr(sprintf('%o', fileperms($fullPath)), -4) : null,
+            'owner' => file_exists($fullPath) ? posix_getpwuid(fileowner($fullPath))['name'] : null,
+            'group' => file_exists($fullPath) ? posix_getgrgid(filegroup($fullPath))['name'] : null
         ]);
 
         if (!$task->file_path) {
@@ -69,11 +70,11 @@ class DownloadController extends Controller
             abort(404);
         }
 
-        if (!Storage::exists($task->file_path)) {
-            Log::error('File does not exist in storage', [
+        if (!file_exists($fullPath)) {
+            Log::error('File does not exist', [
                 'task_id' => $id,
                 'file_path' => $task->file_path,
-                'full_path' => storage_path('app/' . $task->file_path)
+                'full_path' => $fullPath
             ]);
             abort(404);
         }
@@ -89,11 +90,11 @@ class DownloadController extends Controller
         Log::info('File found, preparing download', [
             'task_id' => $id,
             'file_path' => $task->file_path,
-            'mime_type' => Storage::mimeType($task->file_path)
+            'mime_type' => mime_content_type($fullPath)
         ]);
 
         return response()->download(
-            storage_path('app/' . $task->file_path),
+            $fullPath,
             basename($task->file_path),
             [],
             'inline'
