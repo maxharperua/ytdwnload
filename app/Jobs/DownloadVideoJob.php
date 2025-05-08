@@ -212,7 +212,33 @@ class DownloadVideoJob implements ShouldQueue
             
             // Перемещаем файл в постоянное хранилище
             $finalPath = 'downloads/' . basename($tmpOutput);
-            Storage::put($finalPath, file_get_contents($tmpOutput));
+            Log::info('Saving file to storage', [
+                'tmpPath' => $tmpOutput,
+                'finalPath' => $finalPath,
+                'exists' => file_exists($tmpOutput),
+                'size' => file_exists($tmpOutput) ? filesize($tmpOutput) : 0
+            ]);
+            
+            if (!file_exists($tmpOutput)) {
+                throw new \Exception('Временный файл не найден: ' . $tmpOutput);
+            }
+            
+            $content = file_get_contents($tmpOutput);
+            if ($content === false) {
+                throw new \Exception('Не удалось прочитать временный файл');
+            }
+            
+            $saved = Storage::put($finalPath, $content);
+            Log::info('File saved to storage', [
+                'success' => $saved,
+                'path' => $finalPath,
+                'exists' => Storage::exists($finalPath)
+            ]);
+            
+            if (!$saved) {
+                throw new \Exception('Не удалось сохранить файл в storage');
+            }
+            
             @unlink($tmpOutput);
             
             $task->file_path = $finalPath;

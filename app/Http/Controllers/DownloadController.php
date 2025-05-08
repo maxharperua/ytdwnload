@@ -48,8 +48,19 @@ class DownloadController extends Controller
     // Скачивание готового файла
     public function file(DownloadTask $task)
     {
-        if (!$task->file_path || !Storage::exists($task->file_path)) {
-            abort(404, 'Файл не найден');
+        \Log::info('Attempting to download file', [
+            'task_id' => $task->id,
+            'file_path' => $task->file_path,
+            'exists' => $task->file_path ? Storage::exists($task->file_path) : false,
+            'status' => $task->status
+        ]);
+
+        if (!$task->file_path) {
+            abort(404, 'Путь к файлу не указан');
+        }
+
+        if (!Storage::exists($task->file_path)) {
+            abort(404, 'Файл не найден в storage: ' . $task->file_path);
         }
 
         return Storage::download($task->file_path);
