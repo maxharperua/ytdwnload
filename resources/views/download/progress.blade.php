@@ -19,12 +19,14 @@
                 <div class="alert alert-warning">Генерация отменена.</div>
                 <form action="{{ route('youtube.index') }}" method="POST" style="display: inline;">
                     @csrf
+                    <input type="hidden" name="url" value="{{ $task->url }}">
                     <button type="submit" class="btn btn-outline-secondary">← Назад к выбору видео</button>
                 </form>
             </div>
             <div class="mt-4">
                 <form action="{{ route('youtube.index') }}" method="POST" style="display: inline;">
                     @csrf
+                    <input type="hidden" name="url" value="{{ $task->url }}">
                     <button type="submit" class="btn btn-outline-secondary">← Назад к выбору видео</button>
                 </form>
             </div>

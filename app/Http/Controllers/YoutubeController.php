@@ -12,7 +12,10 @@ class YoutubeController extends Controller
     {
         $videoUrl = session('video_url');
         if ($videoUrl) {
-            return $this->download(new Request(['url' => $videoUrl]));
+            $request = new Request();
+            $request->merge(['url' => $videoUrl]);
+            $request->headers->set('X-CSRF-TOKEN', csrf_token());
+            return $this->download($request);
         }
         return view('youtube.index');
     }
