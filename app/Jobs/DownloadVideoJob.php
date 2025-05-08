@@ -216,7 +216,9 @@ class DownloadVideoJob implements ShouldQueue
                 'tmpPath' => $tmpOutput,
                 'finalPath' => $finalPath,
                 'exists' => file_exists($tmpOutput),
-                'size' => file_exists($tmpOutput) ? filesize($tmpOutput) : 0
+                'size' => file_exists($tmpOutput) ? filesize($tmpOutput) : 0,
+                'storage_path' => storage_path('app/' . $finalPath),
+                'storage_exists' => Storage::exists($finalPath)
             ]);
             
             if (!file_exists($tmpOutput)) {
@@ -228,16 +230,24 @@ class DownloadVideoJob implements ShouldQueue
                 throw new \Exception('Не удалось прочитать временный файл');
             }
             
-            $saved = Storage::put($finalPath, $content);
-            Log::info('File saved to storage', [
-                'success' => $saved,
-                'path' => $finalPath,
-                'exists' => Storage::exists($finalPath)
-            ]);
-            
-            if (!$saved) {
-                throw new \Exception('Не удалось сохранить файл в storage');
+            // Проверяем, существует ли директория
+            $dirPath = storage_path('app/downloads');
+            if (!file_exists($dirPath)) {
+                mkdir($dirPath, 0777, true);
             }
+            
+            // Сохраняем файл напрямую
+            $fullPath = storage_path('app/' . $finalPath);
+            if (file_put_contents($fullPath, $content) === false) {
+                throw new \Exception('Не удалось сохранить файл: ' . $fullPath);
+            }
+            
+            Log::info('File saved directly', [
+                'path' => $fullPath,
+                'exists' => file_exists($fullPath),
+                'size' => file_exists($fullPath) ? filesize($fullPath) : 0,
+                'permissions' => file_exists($fullPath) ? substr(sprintf('%o', fileperms($fullPath)), -4) : null
+            ]);
             
             @unlink($tmpOutput);
             

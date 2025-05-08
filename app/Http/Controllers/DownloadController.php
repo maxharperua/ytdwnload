@@ -63,7 +63,7 @@ class DownloadController extends Controller
             abort(404, 'Файл не найден в storage: ' . $task->file_path);
         }
 
-        return Storage::download($task->file_path);
+        return Storage::download($task->file_path, null, [], 'inline');
     }
 
     // Отмена задачи
