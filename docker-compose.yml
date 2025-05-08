@@ -8,7 +8,9 @@ services:
     restart: unless-stopped
     working_dir: /var/www
     volumes:
-      - ./:/var/www
+      - type: bind
+        source: ./
+        target: /var/www
     command: >
       bash -c "chown -R www-data:www-data /var/www/database &&
                chmod -R 775 /var/www/database &&
@@ -24,7 +26,9 @@ services:
     restart: unless-stopped
     working_dir: /var/www
     volumes:
-      - ./:/var/www
+      - type: bind
+        source: ./
+        target: /var/www
     command: php artisan queue:work --sleep=3 --tries=3 --max-time=3600
     networks:
       - laravel_net
@@ -36,8 +40,12 @@ services:
     ports:
       - "80:80"
     volumes:
-      - ./:/var/www
-      - ./docker/nginx/conf.d:/etc/nginx/conf.d
+      - type: bind
+        source: ./
+        target: /var/www
+      - type: bind
+        source: ./docker/nginx/conf.d
+        target: /etc/nginx/conf.d
     networks:
       - laravel_net
 
