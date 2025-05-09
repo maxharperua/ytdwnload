@@ -58,7 +58,16 @@ export default {
     methods: {
         async checkStatus() {
             try {
-                const response = await fetch(`/api/download/status/${this.$route.params.id}`);
+                const response = await fetch(`/api/download/status/${this.$route.params.id}`, {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').content,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'same-origin'
+                });
                 const data = await response.json();
                 if (data.status === 'error') {
                     this.isError = true;

@@ -184,7 +184,8 @@ export default {
                             'Content-Type': 'application/json',
                             'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').content,
                             'X-Requested-With': 'XMLHttpRequest'
-                        }
+                        },
+                        credentials: 'same-origin'
                     });
                     const data = await response.json();
                     console.log('API status response:', data);
@@ -260,6 +261,7 @@ export default {
                         'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').content,
                         'X-Requested-With': 'XMLHttpRequest'
                     },
+                    credentials: 'same-origin',
                     body: JSON.stringify({ url: this.url })
                 });
                 const data = await response.json();
@@ -299,6 +301,7 @@ export default {
                         'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').content,
                         'X-Requested-With': 'XMLHttpRequest'
                     },
+                    credentials: 'same-origin',
                     body: JSON.stringify({ url: this.url, format: format.itag })
                 });
                 const data = await response.json();
@@ -344,7 +347,8 @@ export default {
                         'Accept': 'application/json',
                         'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').content,
                         'X-Requested-With': 'XMLHttpRequest'
-                    }
+                    },
+                    credentials: 'same-origin'
                 });
                 const data = await response.json();
                 if (data.success) {

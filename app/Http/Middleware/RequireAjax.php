@@ -15,12 +15,8 @@ class RequireAjax
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // Проверяем, является ли запрос AJAX или имеет заголовок Accept: application/json
-        if (!$request->ajax() && 
-            !$request->wantsJson() && 
-            !$request->isJson() && 
-            !$request->acceptsJson() && 
-            !$request->header('Accept') === 'application/json') {
+        // Проверяем наличие заголовка X-Requested-With
+        if (!$request->header('X-Requested-With') || $request->header('X-Requested-With') !== 'XMLHttpRequest') {
             abort(403, 'Только AJAX запросы разрешены');
         }
 

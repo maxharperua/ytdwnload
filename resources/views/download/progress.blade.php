@@ -172,7 +172,16 @@
 </body>
 <script>
     function checkStatus() {
-        fetch("{{ route('download.status', ['id' => $task->id]) }}")
+        fetch("{{ route('download.status', ['id' => $task->id]) }}", {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').content,
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            credentials: 'same-origin'
+        })
             .then(response => response.json())
             .then(data => {
                 let bar = document.getElementById('progress-bar');
