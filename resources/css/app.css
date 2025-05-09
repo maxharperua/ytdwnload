@@ -9,3 +9,41 @@
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 }
+
+.btn-glow {
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.2),
+        transparent
+    );
+    animation: glow 2s infinite;
+    pointer-events: none;
+}
+
+@keyframes glow {
+    0% {
+        left: -100%;
+    }
+    100% {
+        left: 100%;
+    }
+}
+
+/* Для всех кнопок и ссылок с glow-эффектом */
+button.btn, a.btn {
+    position: relative;
+    overflow: hidden;
+}
+
+.custom-download-btn,
+.format-download-btn-fixed,
+.btn-ready {
+    position: relative;
+    overflow: hidden;
+}

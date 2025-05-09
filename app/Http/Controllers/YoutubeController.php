@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Models\DownloadTask;
+use App\Rules\VideoUrl;
 
 class YoutubeController extends Controller
 {
@@ -25,7 +26,7 @@ class YoutubeController extends Controller
         Log::info('Download method called', ['url' => $request->url]);
         
         $request->validate([
-            'url' => 'required|url'
+            'url' => ['required', 'url', new VideoUrl]
         ]);
 
         Log::info('Validation passed');

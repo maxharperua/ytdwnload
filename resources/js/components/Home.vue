@@ -19,7 +19,10 @@
                         placeholder="Введите ссылку на YouTube видео"
                         required
                     >
-                    <button type="submit" class="btn custom-download-btn mt-3 main-download-btn">Скачать</button>
+                    <button type="submit" class="btn custom-download-btn mt-3 main-download-btn">
+                        <span>Скачать</span>
+                        <div class="btn-glow"></div>
+                    </button>
                 </form>
                 <!-- Баннер только для мобильных -->
                 <AdBanner class="mobile-banner" :width="950" :height="300" />
@@ -41,7 +44,10 @@
                             <span class="badge format-badge-fixed">{{ format.quality }}</span>
                             <span class="format-type-fixed">{{ format.mimeType }}</span>
                             <template v-if="format.download_url">
-                                <a :href="format.download_url" class="btn btn-ready format-download-btn-fixed" target="_blank">Готово</a>
+                                <a :href="format.download_url" class="btn btn-ready format-download-btn-fixed" target="_blank">
+                                    <span>Готово</span>
+                                    <div class="btn-glow"></div>
+                                </a>
                             </template>
                             <template v-else-if="isActiveTask(format)">
                                 <button class="btn btn-warning format-download-btn-fixed" @click="goToProgress(format)">
@@ -54,7 +60,10 @@
                                 <button class="btn btn-success format-download-btn-fixed" @click="startDownload(format)">Повторить</button>
                             </template>
                             <template v-else>
-                                <button class="btn btn-success format-download-btn-fixed" @click="startDownload(format)">Скачать</button>
+                                <button class="btn btn-success format-download-btn-fixed" @click="startDownload(format)">
+                                    <span>Скачать</span>
+                                    <div class="btn-glow"></div>
+                                </button>
                             </template>
                         </div>
                     </div>

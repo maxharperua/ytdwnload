@@ -20,7 +20,10 @@
                         </div>
                     </div>
                     <div id="download-block" v-if="isFinished">
-                        <a :href="downloadUrl" class="btn custom-download-btn btn-lg">Скачать видео</a>
+                        <a :href="downloadUrl" class="btn custom-download-btn btn-lg">
+                            <span>Скачать видео</span>
+                            <div class="btn-glow"></div>
+                        </a>
                     </div>
                     <div v-if="isError" class="alert custom-alert-danger mt-3">{{ error }}</div>
                     <div v-if="isCancelled">
