@@ -5,7 +5,7 @@ use App\Http\Controllers\YoutubeController;
 use App\Http\Controllers\DownloadController;
 
 // Только API-маршруты
-Route::prefix('api')->group(function () {
+Route::prefix('api')->middleware(['web', 'throttle:60,1', \App\Http\Middleware\RequireAjax::class])->group(function () {
     Route::post('/youtube/convert', [YoutubeController::class, 'download'])->name('youtube.download');
     Route::get('/download/status/{id}', [DownloadController::class, 'status'])->name('download.status');
     Route::get('/download/file/{id}', [DownloadController::class, 'file'])->name('download.file');

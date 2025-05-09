@@ -181,7 +181,9 @@ export default {
                         method: 'GET',
                         headers: {
                             'Accept': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').content
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').content,
+                            'X-Requested-With': 'XMLHttpRequest'
                         }
                     });
                     const data = await response.json();
@@ -254,7 +256,9 @@ export default {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').content
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').content,
+                        'X-Requested-With': 'XMLHttpRequest'
                     },
                     body: JSON.stringify({ url: this.url })
                 });
@@ -291,7 +295,9 @@ export default {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').content
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').content,
+                        'X-Requested-With': 'XMLHttpRequest'
                     },
                     body: JSON.stringify({ url: this.url, format: format.itag })
                 });
@@ -334,8 +340,10 @@ export default {
                 const response = await fetch(`/api/download/cancel/${format.active_task_id}`, {
                     method: 'POST',
                     headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').content,
+                        'Content-Type': 'application/json',
                         'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').content,
+                        'X-Requested-With': 'XMLHttpRequest'
                     }
                 });
                 const data = await response.json();
