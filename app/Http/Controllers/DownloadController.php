@@ -24,6 +24,10 @@ class DownloadController extends Controller
             'progress' => 0,
         ]);
         DownloadVideoJob::dispatch($task->id);
+
+        if ($request->expectsJson() || $request->ajax() || $request->is('api/*')) {
+            return response()->json(['id' => $task->id]);
+        }
         return redirect()->route('download.progress', ['id' => $task->id]);
     }
 
@@ -38,11 +42,39 @@ class DownloadController extends Controller
     public function status($id)
     {
         $task = DownloadTask::findOrFail($id);
+        $downloadUrl = null;
+        
+        if ($task->status === 'finished' && $task->file_path) {
+            $fullPath = storage_path('app/' . $task->file_path);
+            Log::info('Checking file status', [
+                'task_id' => $id,
+                'file_path' => $task->file_path,
+                'full_path' => $fullPath,
+                'exists' => file_exists($fullPath),
+                'size' => file_exists($fullPath) ? filesize($fullPath) : 0,
+                'perms' => file_exists($fullPath) ? substr(sprintf('%o', fileperms($fullPath)), -4) : null
+            ]);
+            
+            if (file_exists($fullPath) && filesize($fullPath) > 0) {
+                $downloadUrl = route('download.file', ['id' => $task->id]);
+            } else {
+                // Если файл не найден или пустой, но статус finished - меняем статус на error
+                $task->status = 'error';
+                $task->error = 'Файл не найден или поврежден';
+                $task->save();
+                Log::error('File not found or empty', [
+                    'task_id' => $id,
+                    'file_path' => $task->file_path,
+                    'full_path' => $fullPath
+                ]);
+            }
+        }
+        
         return response()->json([
             'status' => $task->status,
             'progress' => $task->progress,
             'error' => $task->error,
-            'download_url' => $task->status === 'finished' ? route('download.file', ['id' => $task->id]) : null,
+            'download_url' => $downloadUrl,
         ]);
     }
 
@@ -60,9 +92,8 @@ class DownloadController extends Controller
             'status' => $task->status,
             'full_path' => $fullPath,
             'file_exists' => file_exists($fullPath),
-            'permissions' => file_exists($fullPath) ? substr(sprintf('%o', fileperms($fullPath)), -4) : null,
-            'owner' => file_exists($fullPath) ? posix_getpwuid(fileowner($fullPath))['name'] : null,
-            'group' => file_exists($fullPath) ? posix_getgrgid(filegroup($fullPath))['name'] : null
+            'file_size' => file_exists($fullPath) ? filesize($fullPath) : 0,
+            'permissions' => file_exists($fullPath) ? substr(sprintf('%o', fileperms($fullPath)), -4) : null
         ]);
 
         if (!$task->file_path) {
@@ -83,6 +114,14 @@ class DownloadController extends Controller
             Log::error('Task is not finished', [
                 'task_id' => $id,
                 'status' => $task->status
+            ]);
+            abort(404);
+        }
+
+        if (filesize($fullPath) === 0) {
+            Log::error('File is empty', [
+                'task_id' => $id,
+                'file_path' => $task->file_path
             ]);
             abort(404);
         }

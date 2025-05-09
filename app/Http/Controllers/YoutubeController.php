@@ -163,9 +163,20 @@ class YoutubeController extends Controller
             $thumbnail = $videoInfo['thumbnail'] ?? null;
 
             if (empty($formats)) {
+                if ($request->expectsJson() || $request->ajax()) {
+                    return response()->json([
+                        'error' => 'Не найдены доступные форматы видео',
+                    ], 422);
+                }
                 return back()->with('error', 'Не найдены доступные форматы видео');
             }
 
+            if ($request->expectsJson() || $request->ajax() || $request->is('api/*')) {
+                return response()->json([
+                    'formats' => $formats,
+                    'thumbnail' => $thumbnail,
+                ]);
+            }
             return view('youtube.index', compact('formats', 'thumbnail'));
         } catch (\Exception $e) {
             Log::error('Error', ['error' => $e->getMessage()]);

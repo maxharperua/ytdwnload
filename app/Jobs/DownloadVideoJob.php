@@ -201,8 +201,24 @@ class DownloadVideoJob implements ShouldQueue
                 $mergeOutput = shell_exec($mergeCmd);
                 Log::info('Merge output', ['output' => $mergeOutput]);
                 
-                @unlink($tmpVideo);
-                @unlink($tmpAudio);
+                // Проверяем результат объединения
+                if (!file_exists($tmpOutput) || filesize($tmpOutput) === 0) {
+                    Log::error('Merge failed', [
+                        'output' => $mergeOutput,
+                        'video_exists' => file_exists($tmpVideo),
+                        'audio_exists' => file_exists($tmpAudio),
+                        'output_exists' => file_exists($tmpOutput)
+                    ]);
+                    throw new \Exception('Не удалось объединить видео и аудио');
+                }
+                
+                // Удаляем временные файлы
+                if (file_exists($tmpVideo)) {
+                    @unlink($tmpVideo);
+                }
+                if (file_exists($tmpAudio)) {
+                    @unlink($tmpAudio);
+                }
             }
             
             if (!file_exists($tmpOutput)) {
@@ -212,53 +228,70 @@ class DownloadVideoJob implements ShouldQueue
             
             // Перемещаем файл в постоянное хранилище
             $finalPath = 'downloads/' . basename($tmpOutput);
-            Log::info('Saving file to storage', [
-                'tmpPath' => $tmpOutput,
-                'finalPath' => $finalPath,
-                'exists' => file_exists($tmpOutput),
-                'size' => file_exists($tmpOutput) ? filesize($tmpOutput) : 0,
-                'storage_path' => storage_path('app/' . $finalPath),
-                'storage_exists' => Storage::exists($finalPath)
-            ]);
             
-            if (!file_exists($tmpOutput)) {
-                throw new \Exception('Временный файл не найден: ' . $tmpOutput);
+            // Проверяем существование директории
+            $downloadsDir = storage_path('app/downloads');
+            if (!file_exists($downloadsDir)) {
+                if (!mkdir($downloadsDir, 0777, true)) {
+                    Log::error('Failed to create downloads directory', ['path' => $downloadsDir]);
+                    throw new \Exception('Не удалось создать директорию для сохранения');
+                }
             }
             
-            // Проверяем, существует ли директория
-            $dirPath = storage_path('app/downloads');
-            if (!file_exists($dirPath)) {
-                mkdir($dirPath, 0777, true);
+            // Проверяем права доступа
+            if (!is_writable($downloadsDir)) {
+                Log::error('Downloads directory is not writable', ['path' => $downloadsDir]);
+                throw new \Exception('Нет прав на запись в директорию');
             }
             
-            // Сохраняем файл потоковым копированием
-            $fullPath = storage_path('app/' . $finalPath);
-            if (!copy($tmpOutput, $fullPath)) {
-                throw new \Exception('Не удалось сохранить файл: ' . $fullPath);
+            $finalFullPath = storage_path('app/' . $finalPath);
+            
+            // Проверяем, существует ли уже файл
+            if (file_exists($finalFullPath)) {
+                @unlink($finalFullPath);
             }
             
-            // Устанавливаем правильного владельца
-            chown($fullPath, 'www-data');
-            chgrp($fullPath, 'www-data');
-            chmod($fullPath, 0664);
+            // Копируем файл вместо перемещения
+            if (!copy($tmpOutput, $finalFullPath)) {
+                Log::error('Failed to copy file to final location', [
+                    'from' => $tmpOutput,
+                    'to' => $finalFullPath,
+                    'from_exists' => file_exists($tmpOutput),
+                    'to_exists' => file_exists($finalFullPath),
+                    'from_perms' => file_exists($tmpOutput) ? substr(sprintf('%o', fileperms($tmpOutput)), -4) : null,
+                    'dir_perms' => substr(sprintf('%o', fileperms($downloadsDir)), -4)
+                ]);
+                throw new \Exception('Не удалось сохранить файл');
+            }
             
-            Log::info('File saved using stream copy', [
-                'path' => $fullPath,
-                'exists' => file_exists($fullPath),
-                'size' => file_exists($fullPath) ? filesize($fullPath) : 0,
-                'permissions' => file_exists($fullPath) ? substr(sprintf('%o', fileperms($fullPath)), -4) : null,
-                'owner' => file_exists($fullPath) ? posix_getpwuid(fileowner($fullPath))['name'] : null,
-                'group' => file_exists($fullPath) ? posix_getgrgid(filegroup($fullPath))['name'] : null
-            ]);
-            
+            // Удаляем временный файл
             @unlink($tmpOutput);
+            
+            // Проверяем, что файл действительно существует
+            if (!file_exists($finalFullPath)) {
+                Log::error('File not found after copy', [
+                    'path' => $finalFullPath,
+                    'dir_exists' => file_exists($downloadsDir),
+                    'dir_perms' => substr(sprintf('%o', fileperms($downloadsDir)), -4)
+                ]);
+                throw new \Exception('Файл не найден после сохранения');
+            }
+            
+            // Устанавливаем правильные права доступа
+            chmod($finalFullPath, 0664);
             
             $task->file_path = $finalPath;
             $task->progress = 100;
             $task->status = 'finished';
             $task->save();
             
-            Log::info('Download completed successfully', ['taskId' => $this->taskId]);
+            Log::info('Download completed successfully', [
+                'taskId' => $this->taskId,
+                'filePath' => $finalPath,
+                'fileExists' => file_exists($finalFullPath),
+                'fileSize' => filesize($finalFullPath),
+                'filePerms' => substr(sprintf('%o', fileperms($finalFullPath)), -4)
+            ]);
             
         } catch (\Exception $e) {
             Log::error('DownloadVideoJob error', [
