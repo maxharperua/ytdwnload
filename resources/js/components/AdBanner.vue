@@ -42,11 +42,13 @@ export default {
         ins.setAttribute('data-ad-client', 'ad-1829001');
         ins.setAttribute('data-ad-slot', this.adSlot);
         this.$refs.bannerContainer.appendChild(ins);
-        // Загружаем скрипт если не был загружен
-        if (!window._mailruAdAsyncLoaded) {
+        // Проверяем, есть ли уже скрипт ads-async.js
+        const scriptSrc = 'https://ad.mail.ru/static/ads-async.js';
+        const alreadyLoaded = Array.from(document.scripts).some(s => s.src === scriptSrc);
+        if (!alreadyLoaded && !window._mailruAdAsyncLoaded) {
             const script = document.createElement('script');
             script.async = true;
-            script.src = 'https://ad.mail.ru/static/ads-async.js';
+            script.src = scriptSrc;
             script.onload = () => {
                 window._mailruAdAsyncLoaded = true;
                 if (window.MRGtag) window.MRGtag.push({});
