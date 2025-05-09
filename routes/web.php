@@ -4,11 +4,6 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\YoutubeController;
 use App\Http\Controllers\DownloadController;
 
-// Удаляем дублирующий маршрут
-// Route::get('/', function () {
-//     return view('welcome');
-// });
-
 Route::get('/', [YoutubeController::class, 'index'])->name('youtube.index');
 Route::post('/', [YoutubeController::class, 'index'])->name('youtube.index');
 Route::post('/download', [YoutubeController::class, 'download'])->name('youtube.download');

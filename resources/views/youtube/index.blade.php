@@ -332,7 +332,7 @@
         <div class="dracula-spinner"></div>
     </div>
     <div class="container">
-        <h1 class="text-center mb-4">YouTube Video Downloader</h1>
+        <h1 class="text-center mb-4">Video Downloader</h1>
         
         @if(session('error'))
             <div class="alert alert-danger">
@@ -352,7 +352,7 @@
                 <input type="url" 
                        name="url" 
                        class="form-control" 
-                       placeholder="Введите ссылку на YouTube видео" 
+                       placeholder="Введите ссылку на YouTube/VKvideo/TikTok видео" 
                        required
                        value="{{ old('url') ?? (isset($videoUrl) ? $videoUrl : '') }}">
                 @error('url')
