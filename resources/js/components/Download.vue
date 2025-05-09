@@ -1,36 +1,49 @@
 <template>
-    <div class="container" style="max-width: 480px; margin: 40px auto;">
-        <div class="card download-card">
-            <div class="card-body text-center">
-                <h3 class="main-title mb-4 one-line-title">Генерация видео...</h3>
-                <div id="progress-block" v-if="!isError && !isCancelled && !isFinished">
-                    <div class="custom-progress mb-3">
-                        <div class="custom-progress-bar" :style="{ width: progress + '%' }">
-                            {{ progress }}%
+    <div class="banner-layout">
+        <!-- Левый баннер для десктопа -->
+        <AdBanner class="side-banner left-banner" :width="300" :height="850" />
+
+        <div class="container" style="max-width: 480px; margin: 40px auto;">
+            <div class="card download-card">
+                <div class="card-body text-center">
+                    <h3 class="main-title mb-4 one-line-title">Генерация видео...</h3>
+                    <!-- Баннер только для мобильных -->
+                    <AdBanner class="mobile-banner" :width="950" :height="300" />
+                    <div id="progress-block" v-if="!isError && !isCancelled && !isFinished">
+                        <div class="custom-progress mb-3">
+                            <div class="custom-progress-bar" :style="{ width: progress + '%' }">
+                                {{ progress }}%
+                            </div>
+                        </div>
+                        <div id="status-text" class="status-text">
+                            {{ statusText }}
                         </div>
                     </div>
-                    <div id="status-text" class="status-text">
-                        {{ statusText }}
+                    <div id="download-block" v-if="isFinished">
+                        <a :href="downloadUrl" class="btn custom-download-btn btn-lg">Скачать видео</a>
                     </div>
-                </div>
-                <div id="download-block" v-if="isFinished">
-                    <a :href="downloadUrl" class="btn custom-download-btn btn-lg">Скачать видео</a>
-                </div>
-                <div v-if="isError" class="alert custom-alert-danger mt-3">{{ error }}</div>
-                <div v-if="isCancelled">
-                    <div class="alert custom-alert-warning">Генерация отменена.</div>
-                </div>
-                <div class="mt-4">
-                    <button @click="goBackToFormats" class="btn custom-outline-btn">← Назад к выбору формата</button>
+                    <div v-if="isError" class="alert custom-alert-danger mt-3">{{ error }}</div>
+                    <div v-if="isCancelled">
+                        <div class="alert custom-alert-warning">Генерация отменена.</div>
+                    </div>
+                    <div class="mt-4">
+                        <button @click="goBackToFormats" class="btn custom-outline-btn">← Назад к выбору формата</button>
+                    </div>
                 </div>
             </div>
         </div>
+
+        <!-- Правый баннер для десктопа -->
+        <AdBanner class="side-banner right-banner" :width="300" :height="850" />
     </div>
 </template>
 
 <script>
+import AdBanner from './AdBanner.vue'
+
 export default {
     name: 'Download',
+    components: { AdBanner },
     data() {
         return {
             progress: 0,
@@ -214,5 +227,45 @@ export default {
     font-family: 'Montserrat', 'Segoe UI', Arial, sans-serif;
     font-size: 1.08rem;
     font-weight: 500;
+}
+
+.banner-layout {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    position: relative;
+}
+
+.side-banner {
+    display: none;
+    position: sticky;
+    top: 40px;
+    z-index: 10;
+}
+
+.left-banner {
+    margin-right: 24px;
+}
+
+.right-banner {
+    margin-left: 24px;
+}
+
+@media (min-width: 1100px) {
+    .side-banner {
+        display: block;
+    }
+    .mobile-banner {
+        display: none !important;
+    }
+}
+
+@media (max-width: 1099px) {
+    .side-banner {
+        display: none !important;
+    }
+    .mobile-banner {
+        display: block;
+    }
 }
 </style> 

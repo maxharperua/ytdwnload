@@ -1,73 +1,86 @@
 <template>
-    <div class="container" style="max-width: 600px; margin: 40px auto;">
-        <div class="card" style="padding: 2.5rem 2rem 2rem 2rem; position: relative;">
-            <div v-if="isLoading" class="preloader-overlay">
-                <div class="dracula-spinner"></div>
-            </div>
-            <h1 class="main-title mb-3">
-                {{ videoData && videoData.title ? videoData.title : 'Video Downloader' }}
-            </h1>
-            <form v-if="!videoData" @submit.prevent="submitUrl" class="text-center" autocomplete="off">
-                <input
-                    type="text"
-                    v-model="url"
-                    class="form-control custom-input"
-                    placeholder="Введите ссылку на YouTube видео"
-                    required
-                >
-                <button type="submit" class="btn custom-download-btn mt-3 main-download-btn">Скачать</button>
-            </form>
-            <div v-if="!videoData" class="mt-3 p-3 text-center soft-desc small-desc">
-                Сервис ytload.ru предоставляет техническую возможность скачивания видео и музыки исключительно для личного некоммерческого использования. Администрация не несёт ответственности за дальнейшее использование скачанных файлов. Пользователь самостоятельно несёт ответственность за соблюдение авторских прав и законодательства своей страны.
-            </div>
-            <div v-if="videoData">
-                <div class="preview-block-center">
-                    <div class="preview-block">
-                        <img :src="videoData.thumbnail" alt="preview" class="img-fluid rounded shadow w-100 preview-img">
-                        <button @click="removeVideo" class="remove-video-btn-animated preview-close-btn">
-                            <span style="font-size:1.7rem; color:#fff;">×</span>
-                        </button>
-                    </div>
+    <div class="banner-layout">
+        <!-- Левый баннер для десктопа -->
+        <AdBanner class="side-banner left-banner" :width="300" :height="850" />
+
+        <div class="container" style="max-width: 600px; margin: 40px auto;">
+            <div class="card" style="padding: 2.5rem 2rem 2rem 2rem; position: relative;">
+                <div v-if="isLoading" class="preloader-overlay">
+                    <div class="dracula-spinner"></div>
                 </div>
-                <h4 class="mt-4 mb-3 formats-title">Доступные форматы:</h4>
-                <div class="formats-list mb-4">
-                    <div v-for="format in videoData.formats" :key="format.itag" class="format-row-fixed" :class="{'active-format-row': isActiveTask(format)}">
-                        <span class="badge format-badge-fixed">{{ format.quality }}</span>
-                        <span class="format-type-fixed">{{ format.mimeType }}</span>
-                        <template v-if="format.download_url">
-                            <a :href="format.download_url" class="btn btn-success format-download-btn-fixed" target="_blank">
-                                Скачать
-                            </a>
-                        </template>
-                        <template v-else-if="isActiveTask(format)">
-                            <button class="btn btn-warning format-download-btn-fixed" @click="goToProgress(format)">
-                                {{ format.progress !== undefined ? `${format.progress}%` : '0%' }}
-                            </button>
-                            <button class="btn btn-outline-danger format-cancel-btn-fixed ms-2" @click="cancelTask(format)">Отменить</button>
-                        </template>
-                        <template v-else-if="format.error">
-                            <div class="error-message">{{ format.error }}</div>
-                            <button class="btn btn-success format-download-btn-fixed" @click="startDownload(format)">Повторить</button>
-                        </template>
-                        <template v-else>
-                            <button class="btn btn-success format-download-btn-fixed" @click="startDownload(format)">Скачать</button>
-                        </template>
-                    </div>
-                </div>
-                <div class="mt-3 p-3 text-center soft-desc small-desc">
+                <h1 class="main-title mb-3">
+                    {{ videoData && videoData.title ? videoData.title : 'Video Downloader' }}
+                </h1>
+                <form v-if="!videoData" @submit.prevent="submitUrl" class="text-center" autocomplete="off">
+                    <input
+                        type="text"
+                        v-model="url"
+                        class="form-control custom-input"
+                        placeholder="Введите ссылку на YouTube видео"
+                        required
+                    >
+                    <button type="submit" class="btn custom-download-btn mt-3 main-download-btn">Скачать</button>
+                </form>
+                <!-- Баннер только для мобильных -->
+                <AdBanner class="mobile-banner" :width="950" :height="300" />
+                <div v-if="!videoData" class="mt-3 p-3 text-center soft-desc small-desc">
                     Сервис ytload.ru предоставляет техническую возможность скачивания видео и музыки исключительно для личного некоммерческого использования. Администрация не несёт ответственности за дальнейшее использование скачанных файлов. Пользователь самостоятельно несёт ответственность за соблюдение авторских прав и законодательства своей страны.
                 </div>
-            </div>
-            <div v-if="error" class="alert alert-danger mt-3">
-                {{ error }}
+                <div v-if="videoData">
+                    <div class="preview-block-center">
+                        <div class="preview-block">
+                            <img :src="videoData.thumbnail" alt="preview" class="img-fluid rounded shadow w-100 preview-img">
+                            <button @click="removeVideo" class="remove-video-btn-animated preview-close-btn">
+                                <span style="font-size:1.7rem; color:#fff;">×</span>
+                            </button>
+                        </div>
+                    </div>
+                    <h4 class="mt-4 mb-3 formats-title">Доступные форматы:</h4>
+                    <div class="formats-list mb-4">
+                        <div v-for="format in videoData.formats" :key="format.itag" class="format-row-fixed" :class="{'active-format-row': isActiveTask(format)}">
+                            <span class="badge format-badge-fixed">{{ format.quality }}</span>
+                            <span class="format-type-fixed">{{ format.mimeType }}</span>
+                            <template v-if="format.download_url">
+                                <a :href="format.download_url" class="btn btn-ready format-download-btn-fixed" target="_blank">Готово</a>
+                            </template>
+                            <template v-else-if="isActiveTask(format)">
+                                <button class="btn btn-warning format-download-btn-fixed" @click="goToProgress(format)">
+                                    {{ format.progress !== undefined ? `${format.progress}%` : '0%' }}
+                                </button>
+                                <button class="btn btn-outline-danger format-cancel-btn-fixed ms-2" @click="cancelTask(format)">Отменить</button>
+                            </template>
+                            <template v-else-if="format.error">
+                                <div class="error-message">{{ format.error }}</div>
+                                <button class="btn btn-success format-download-btn-fixed" @click="startDownload(format)">Повторить</button>
+                            </template>
+                            <template v-else>
+                                <button class="btn btn-success format-download-btn-fixed" @click="startDownload(format)">Скачать</button>
+                            </template>
+                        </div>
+                    </div>
+                    <div class="mt-3 p-3 text-center soft-desc small-desc">
+                        Сервис ytload.ru предоставляет техническую возможность скачивания видео и музыки исключительно для личного некоммерческого использования. Администрация не несёт ответственности за дальнейшее использование скачанных файлов. Пользователь самостоятельно несёт ответственность за соблюдение авторских прав и законодательства своей страны.
+                    </div>
+                </div>
+                <div v-if="error" class="alert alert-danger mt-3">
+                    {{ error }}
+                </div>
             </div>
         </div>
+
+        <!-- Правый баннер для десктопа -->
+        <AdBanner class="side-banner right-banner" :width="300" :height="850" />
     </div>
 </template>
 
 <script>
+import AdBanner from './AdBanner.vue'
+
 export default {
     name: 'Home',
+    components: {
+        AdBanner
+    },
     data() {
         return {
             url: '',
@@ -532,5 +545,55 @@ export default {
 
 .custom-download-btn.main-download-btn {
     margin-top: 1.5rem;
+}
+
+.banner-layout {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    position: relative;
+}
+
+.side-banner {
+    display: none;
+    position: sticky;
+    top: 40px;
+    z-index: 10;
+}
+
+.left-banner {
+    margin-right: 24px;
+}
+
+.right-banner {
+    margin-left: 24px;
+}
+
+/* Показываем боковые баннеры только на экранах шире 1100px */
+@media (min-width: 1100px) {
+    .side-banner {
+        display: block;
+    }
+    .mobile-banner {
+        display: none !important;
+    }
+}
+
+/* На мобильных только мобильный баннер */
+@media (max-width: 1099px) {
+    .side-banner {
+        display: none !important;
+    }
+    .mobile-banner {
+        display: block;
+    }
+}
+
+.btn-ready.format-download-btn-fixed {
+    background: linear-gradient(90deg, #6272fa 0%, #8be9fd 100%) !important;
+    color: #fff !important;
+    font-weight: 700;
+    box-shadow: 0 2px 8px #6272fa80;
+    border: none;
 }
 </style> 
