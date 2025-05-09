@@ -20,6 +20,16 @@
     <meta name="twitter:title" content="Скачать видео и музыку с YouTube, ВКонтакте, RuTube, Shorts — Бесплатно и без регистрации">
     <meta name="twitter:description" content="Скачивайте видео, музыку и фото с YouTube, ВКонтакте, RuTube, Shorts онлайн, быстро и бесплатно.">
     <meta name="twitter:image" content="/preview.png">
+    <script async src="https://privacy-cs.mail.ru/static/sync-loader.js"></script>
+    <script>
+    function getSyncId() {
+        try {
+            return JSON.parse(localStorage.getItem('rb_sync_id')).fpid || "";
+        } catch (e) {
+            return "";
+        }
+    }
+    </script>
 </head>
 <body>
     <div id="app"></div>
