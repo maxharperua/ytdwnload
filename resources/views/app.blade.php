@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="yandex-verification" content="fac640da43f275a1" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link rel="icon" type="image/svg+xml" href="/logo.svg">
     <title>YouTube Downloader | Скачать видео с YouTube, ВК, RuTube бесплатно</title>
