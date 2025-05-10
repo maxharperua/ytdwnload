@@ -16,7 +16,8 @@
                         type="text"
                         v-model="url"
                         class="form-control custom-input"
-                        placeholder="Введите ссылку на YouTube видео"
+                        placeholder="Введите ссылку на видео (YouTube, Vimeo и др.)"
+                        title="Поддерживаются ссылки с YouTube, Vimeo и других популярных видеохостингов"
                         required
                     >
                     <button type="submit" class="btn custom-download-btn mt-3 main-download-btn">
@@ -285,7 +286,17 @@ export default {
                     // Запускаем polling после получения данных
                     this.startPolling();
                 } else {
-                    this.error = data.message || 'Произошла ошибка';
+                    // Глобальная обработка ошибок валидации
+                    if (data.errors) {
+                        const allErrors = Object.values(data.errors).flat();
+                        if (allErrors.length === 1) {
+                            this.error = allErrors[0];
+                        } else if (allErrors.length > 1) {
+                            this.error = `${allErrors[0]} (и ещё ${allErrors.length - 1} ошибка${(allErrors.length - 1) % 10 === 1 && (allErrors.length - 1) !== 11 ? '' : (allErrors.length - 1) % 10 >= 2 && (allErrors.length - 1) % 10 <= 4 && ((allErrors.length - 1) < 10 || (allErrors.length - 1) > 20) ? 'и' : ''})`;
+                        }
+                    } else {
+                        this.error = data.message || 'Произошла ошибка';
+                    }
                 }
             } catch (err) {
                 this.error = 'Ошибка соединения';
@@ -385,6 +396,54 @@ export default {
 
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700;400&display=swap');
+
+/* Стили для кастомного тултипа */
+.custom-input[title] {
+    position: relative;
+}
+
+.custom-input[title]:hover::after {
+    content: attr(title);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 8px 12px;
+    background: #282a36;
+    color: #f8f8f2;
+    font-size: 0.9rem;
+    border-radius: 6px;
+    white-space: nowrap;
+    z-index: 1000;
+    box-shadow: 0 4px 16px rgba(189, 147, 249, 0.2);
+    border: 1px solid #bd93f9;
+    margin-bottom: 8px;
+    font-family: 'Montserrat', 'Segoe UI', Arial, sans-serif;
+    animation: tooltipFadeIn 0.2s ease-out;
+}
+
+.custom-input[title]:hover::before {
+    content: '';
+    position: absolute;
+    bottom: calc(100% - 4px);
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 6px;
+    border-style: solid;
+    border-color: #bd93f9 transparent transparent transparent;
+    z-index: 1000;
+}
+
+@keyframes tooltipFadeIn {
+    from {
+        opacity: 0;
+        transform: translate(-50%, 8px);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, 0);
+    }
+}
 
 .main-title {
     text-align: center;
