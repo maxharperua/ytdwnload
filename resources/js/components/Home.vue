@@ -149,6 +149,39 @@ export default {
         if (this.videoData) {
             this.startPolling();
         }
+
+        // Добавляем JSON-LD разметку
+        const jsonLd = {
+            "@context": "https://schema.org",
+            "@type": "WebApplication",
+            "name": "YTLoad.ru - YouTube Downloader",
+            "description": "Скачивайте видео в HD качестве, музыку MP3 и фото с YouTube, ВКонтакте, RuTube, Shorts бесплатно и без регистрации",
+            "url": "https://ytload.ru",
+            "applicationCategory": "UtilityApplication",
+            "operatingSystem": "Web",
+            "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "RUB"
+            },
+            "featureList": [
+                "Скачивание видео с YouTube",
+                "Скачивание видео с ВКонтакте",
+                "Скачивание видео с RuTube",
+                "Скачивание видео с Shorts",
+                "Поддержка HD качества",
+                "Конвертация в MP3",
+                "Без регистрации"
+            ]
+        };
+
+        // Создаем элемент script
+        const script = document.createElement('script');
+        script.type = 'application/ld+json';
+        script.text = JSON.stringify(jsonLd);
+        
+        // Добавляем в head
+        document.head.appendChild(script);
     },
     beforeUnmount() {
         this.stopPolling();

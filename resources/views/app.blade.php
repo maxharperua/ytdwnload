@@ -6,19 +6,29 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <link rel="icon" type="image/svg+xml" href="/logo.svg">
-    <title>Скачать видео и музыку с YouTube, ВКонтакте, RuTube, Shorts — Бесплатно и без регистрации</title>
-    <meta name="description" content="Скачивайте видео, музыку и фото с YouTube, ВКонтакте, RuTube, Shorts бесплатно и без регистрации. Быстрый онлайн загрузчик — просто вставьте ссылку и скачайте нужный файл!">
-    <meta name="keywords" content="скачать видео, скачать музыку, скачать фото, youtube downloader, вконтакте, rutube, shorts, загрузчик, онлайн, бесплатно, без регистрации">
+    <title>YouTube Downloader | Скачать видео с YouTube, ВК, RuTube бесплатно</title>
+    <meta name="description" content="Скачивайте видео в HD качестве, музыку MP3 и фото с YouTube, ВКонтакте, RuTube, Shorts бесплатно и без регистрации. Поддерживает все форматы: MP4, MP3, WEBM. Быстрый онлайн загрузчик — просто вставьте ссылку!">
+    <meta name="keywords" content="скачать видео, скачать музыку, скачать фото, youtube downloader, вконтакте, rutube, shorts, загрузчик, онлайн, бесплатно, без регистрации, mp4, mp3, hd, 4k">
+    <meta name="robots" content="index, follow">
+    <meta name="theme-color" content="#FF0000">
     <link rel="canonical" href="https://ytload.ru/">
+    <link rel="alternate" href="https://ytload.ru/" hreflang="ru">
+    <link rel="alternate" href="https://ytload.ru/" hreflang="x-default">
+    
     <!-- Open Graph и Twitter -->
-    <meta property="og:title" content="Скачать видео и музыку с YouTube, ВКонтакте, RuTube, Shorts — Бесплатно и без регистрации">
-    <meta property="og:description" content="Быстрое и бесплатное скачивание видео, музыки и фото с YouTube, ВКонтакте, RuTube, Shorts.">
+    <meta property="og:title" content="YouTube Downloader | Скачать видео с YouTube, ВК, RuTube бесплатно">
+    <meta property="og:description" content="Скачивайте видео в HD качестве, музыку MP3 и фото с YouTube, ВКонтакте, RuTube, Shorts бесплатно и без регистрации. Поддерживает все форматы: MP4, MP3, WEBM.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://ytload.ru/">
     <meta property="og:image" content="/preview.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:site_name" content="YTLoad.ru">
+    <meta property="og:locale" content="ru_RU">
+    
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Скачать видео и музыку с YouTube, ВКонтакте, RuTube, Shorts — Бесплатно и без регистрации">
-    <meta name="twitter:description" content="Скачивайте видео, музыку и фото с YouTube, ВКонтакте, RuTube, Shorts онлайн, быстро и бесплатно.">
+    <meta name="twitter:title" content="YouTube Downloader | Скачать видео с YouTube, ВК, RuTube бесплатно">
+    <meta name="twitter:description" content="Скачивайте видео в HD качестве, музыку MP3 и фото с YouTube, ВКонтакте, RuTube, Shorts бесплатно и без регистрации. Поддерживает все форматы: MP4, MP3, WEBM.">
     <meta name="twitter:image" content="/preview.png">
     <script async src="https://privacy-cs.mail.ru/static/sync-loader.js"></script>
     <script>
@@ -48,6 +58,5 @@
             webvisor:true
        });
     </script>
-
 </body>
 </html> 
