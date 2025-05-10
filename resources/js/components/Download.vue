@@ -7,8 +7,6 @@
             <div class="card download-card">
                 <div class="card-body text-center">
                     <h3 class="main-title mb-4 one-line-title">Генерация видео...</h3>
-                    <!-- Баннер только для мобильных -->
-                    <AdBanner class="mobile-banner" :width="950" :height="300" />
                     <div id="progress-block" v-if="!isError && !isCancelled && !isFinished">
                         <div class="custom-progress mb-3">
                             <div class="custom-progress-bar" :style="{ width: progress + '%' }">

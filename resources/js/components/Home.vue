@@ -24,8 +24,6 @@
                         <div class="btn-glow"></div>
                     </button>
                 </form>
-                <!-- Баннер только для мобильных -->
-                <AdBanner class="mobile-banner" :width="950" :height="300" />
                 <div v-if="!videoData" class="mt-3 p-3 text-center soft-desc small-desc">
                     Сервис ytload.ru предоставляет техническую возможность скачивания видео и музыки исключительно для личного некоммерческого использования. Администрация не несёт ответственности за дальнейшее использование скачанных файлов. Пользователь самостоятельно несёт ответственность за соблюдение авторских прав и законодательства своей страны.
                 </div>
@@ -40,31 +38,37 @@
                     </div>
                     <h4 class="mt-4 mb-3 formats-title">Доступные форматы:</h4>
                     <div class="formats-list mb-4">
-                        <div v-for="format in videoData.formats" :key="format.itag" class="format-row-fixed" :class="{'active-format-row': isActiveTask(format)}">
-                            <span class="badge format-badge-fixed">{{ format.quality }}</span>
-                            <span class="format-type-fixed">{{ format.mimeType }}</span>
-                            <template v-if="format.download_url">
-                                <a :href="format.download_url" class="btn btn-ready format-download-btn-fixed" target="_blank">
-                                    <span>Готово</span>
-                                    <div class="btn-glow"></div>
-                                </a>
-                            </template>
-                            <template v-else-if="isActiveTask(format)">
-                                <button class="btn btn-warning format-download-btn-fixed" @click="goToProgress(format)">
-                                    {{ format.progress !== undefined ? `${format.progress}%` : '0%' }}
-                                </button>
-                                <button class="btn btn-outline-danger format-cancel-btn-fixed ms-2" @click="cancelTask(format)">Отменить</button>
-                            </template>
-                            <template v-else-if="format.error">
-                                <div class="error-message">{{ format.error }}</div>
-                                <button class="btn btn-success format-download-btn-fixed" @click="startDownload(format)">Повторить</button>
-                            </template>
-                            <template v-else>
-                                <button class="btn btn-success format-download-btn-fixed" @click="startDownload(format)">
-                                    <span>Скачать</span>
-                                    <div class="btn-glow"></div>
-                                </button>
-                            </template>
+                        <div v-for="format in videoData.formats" :key="format.itag" 
+                            class="format-row-fixed format-card" 
+                            :class="{'active-format-row': isActiveTask(format)}">
+                            <div class="format-card-header">
+                                <span class="badge format-badge-fixed">{{ format.quality }}</span>
+                                <span class="format-type-fixed">{{ format.mimeType }}</span>
+                            </div>
+                            <div class="format-card-actions">
+                                <template v-if="format.download_url">
+                                    <a :href="format.download_url" class="btn btn-ready format-download-btn-fixed" target="_blank">
+                                        <span>Готово</span>
+                                        <div class="btn-glow"></div>
+                                    </a>
+                                </template>
+                                <template v-else-if="isActiveTask(format)">
+                                    <button class="btn btn-warning format-download-btn-fixed" @click="goToProgress(format)">
+                                        {{ format.progress !== undefined ? `${format.progress}%` : '0%' }}
+                                    </button>
+                                    <button class="btn btn-outline-danger format-cancel-btn-fixed ms-2" @click="cancelTask(format)">Отменить</button>
+                                </template>
+                                <template v-else-if="format.error">
+                                    <div class="error-message">{{ format.error }}</div>
+                                    <button class="btn btn-success format-download-btn-fixed" @click="startDownload(format)">Повторить</button>
+                                </template>
+                                <template v-else>
+                                    <button class="btn btn-success format-download-btn-fixed" @click="startDownload(format)">
+                                        <span>Скачать</span>
+                                        <div class="btn-glow"></div>
+                                    </button>
+                                </template>
+                            </div>
                         </div>
                     </div>
                     <div class="mt-3 p-3 text-center soft-desc small-desc">
@@ -404,17 +408,22 @@ export default {
     position: relative;
     width: 90%;
     max-width: 420px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 .preview-img {
     max-height: 220px;
     object-fit: cover;
     border-radius: 12px;
     box-shadow: 0 4px 24px #282a36a0, 0 1.5px 8px 0 #bd93f9;
+    display: block;
+    margin: 0 auto;
 }
 .preview-close-btn {
     position: absolute;
     top: 8px;
-    right: 4px;
+    right: 8px;
     width: 32px;
     height: 32px;
     z-index: 2;
@@ -616,5 +625,103 @@ export default {
     font-weight: 700;
     box-shadow: 0 2px 8px #6272fa80;
     border: none;
+}
+
+/* Стили для карточного отображения на мобильных устройствах */
+@media (max-width: 768px) {
+    .format-row-fixed {
+        flex-direction: column;
+        padding: 1rem;
+        gap: 1rem;
+    }
+    .format-card-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        width: 100%;
+    }
+    .format-card-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        width: 100%;
+    }
+    .format-download-btn-fixed,
+    .format-cancel-btn-fixed {
+        width: 100%;
+        margin: 0;
+    }
+    .error-message {
+        max-width: 100%;
+        text-align: center;
+        margin-bottom: 0.5rem;
+    }
+    .format-type-fixed {
+        font-size: 0.9rem;
+    }
+    .format-badge-fixed {
+        font-size: 0.95rem;
+        padding: 0.25em 0.75em;
+    }
+    .preview-block {
+        width: 100%;
+        max-width: 320px;
+    }
+    .preview-img {
+        max-height: 180px;
+    }
+}
+
+/* Для десктопа: кнопка скачать справа */
+@media (min-width: 769px) {
+    .formats-list {
+        width: 100%;
+    }
+    .format-row-fixed {
+        display: flex;
+        align-items: center;
+        flex-direction: row;
+        gap: 0.7rem;
+    }
+    .format-card-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        min-width: 140px;
+    }
+    .format-type-fixed {
+        margin-right: auto;
+    }
+    .format-card-actions {
+        display: flex;
+        align-items: center;
+        margin-left: auto;
+        gap: 0.5rem;
+    }
+    .format-download-btn-fixed,
+    .format-cancel-btn-fixed {
+        width: auto;
+        min-width: 120px;
+        margin: 0;
+    }
+}
+
+/* Улучшенные стили для карточек */
+.format-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.format-card:hover {
+    transform: translateY(-2px);
+}
+
+@media (max-width: 768px) {
+    .format-card {
+        margin-bottom: 1rem;
+    }
+
+    .format-card:last-child {
+        margin-bottom: 0;
+    }
 }
 </style> 
