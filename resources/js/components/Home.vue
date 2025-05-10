@@ -600,7 +600,25 @@ export default {
     border: 2px solid #ffb86c;
     background: #44475a !important;
     box-shadow: 0 4px 16px #ffb86c80;
+    padding: 0.5rem 1rem;
+    margin: -0.5rem -1rem;
+    border-radius: 12px;
 }
+.format-card-actions {
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+    gap: 0.8rem;
+    padding: 0.2rem 0;
+}
+.format-download-btn-fixed,
+.format-cancel-btn-fixed {
+    width: auto;
+    min-width: 120px;
+    margin: 0;
+    padding: 0.55rem 1.2rem;
+}
+
 .format-download-btn-fixed.btn-warning {
     background: linear-gradient(90deg, #f1fa8c 0%, #ffb86c 100%) !important;
     color: #282a36 !important;
@@ -700,10 +718,8 @@ export default {
         width: 100%;
     }
     .format-card-actions {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-        width: 100%;
+        padding: 0.5rem 0;
+        gap: 0.8rem;
     }
     .format-download-btn-fixed,
     .format-cancel-btn-fixed {
@@ -728,6 +744,10 @@ export default {
     }
     .preview-img {
         max-height: 180px;
+    }
+    .active-format-row {
+        padding: 1rem;
+        margin: -1rem;
     }
 }
 
