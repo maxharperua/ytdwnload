@@ -486,23 +486,35 @@ export default {
     width: 32px;
     height: 32px;
     z-index: 2;
-    background: linear-gradient(90deg,#ff5555 0%,#ff79c6 100%);
-    border: none;
+    background: #44475a;
+    border: 2px solid #bd93f9;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 2px 8px #ff79c6b0, 0 0 4px #ff79c6a0;
-    transition: box-shadow 0.3s, transform 0.25s cubic-bezier(.4,2,.3,1), background 0.3s;
+    box-shadow: 0 2px 8px rgba(189, 147, 249, 0.3);
+    transition: all 0.25s cubic-bezier(.4,2,.3,1);
     outline: none;
-    filter: drop-shadow(0 0 4px #ff79c6a0);
     cursor: pointer;
     padding: 0;
 }
+
+.preview-close-btn span {
+    font-size: 1.4rem;
+    color: #bd93f9;
+    line-height: 1;
+    margin-top: -2px;
+    transition: all 0.25s cubic-bezier(.4,2,.3,1);
+}
+
 .preview-close-btn:hover, .preview-close-btn:focus {
-    background:linear-gradient(90deg,#ff79c6 0%,#ff5555 100%) !important;
-    transform:scale(1.12) rotate(12deg);
-    box-shadow:0 4px 16px #ff79c6a0;
+    background: #bd93f9;
+    transform: scale(1.1);
+    box-shadow: 0 4px 16px rgba(189, 147, 249, 0.4);
+}
+
+.preview-close-btn:hover span, .preview-close-btn:focus span {
+    color: #282a36;
 }
 
 .formats-title {
