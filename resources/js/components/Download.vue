@@ -6,7 +6,7 @@
         <div class="container" style="max-width: 480px; margin: 40px auto;">
             <div class="card download-card">
                 <div class="card-body text-center">
-                    <h3 class="main-title mb-4 one-line-title">Генерация видео...</h3>
+                    <h3 class="main-title mb-4 one-line-title">{{ genTitle }}</h3>
                     <div id="progress-block" v-if="!isError && !isCancelled && !isFinished">
                         <div class="custom-progress mb-3">
                             <div class="custom-progress-bar" :style="{ width: progress + '%' }">
@@ -19,7 +19,7 @@
                     </div>
                     <div id="download-block" v-if="isFinished">
                         <a :href="downloadUrl" class="btn custom-download-btn btn-lg">
-                            <span>Скачать видео</span>
+                            <span>{{ downloadBtnText }}</span>
                             <div class="btn-glow"></div>
                         </a>
                     </div>
@@ -54,6 +54,17 @@ export default {
             isCancelled: false,
             error: null,
             downloadUrl: null
+        }
+    },
+    computed: {
+        isAudioFinal() {
+            return this.$route.query.type === 'audio';
+        },
+        genTitle() {
+            return this.isAudioFinal ? 'Генерация аудио...' : 'Генерация видео...';
+        },
+        downloadBtnText() {
+            return this.isAudioFinal ? 'Скачать аудио' : 'Скачать видео';
         }
     },
     methods: {

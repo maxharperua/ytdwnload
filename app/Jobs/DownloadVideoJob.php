@@ -82,22 +82,86 @@ class DownloadVideoJob implements ShouldQueue
                 mkdir($tmpDir, 0777, true);
             }
             
-            // Если формат содержит и видео, и аудио — просто скачиваем
-            if (isset($selectedFormat['vcodec']) && $selectedFormat['vcodec'] !== 'none' && 
-                isset($selectedFormat['acodec']) && $selectedFormat['acodec'] !== 'none') {
-                
+            // === Только аудио ===
+            if (
+                isset($selectedFormat['vcodec']) && $selectedFormat['vcodec'] === 'none' &&
+                isset($selectedFormat['acodec']) && $selectedFormat['acodec'] !== 'none'
+            ) {
+                $tmpAudio = $tmpDir . '/audio_' . uniqid() . '.m4a';
+                $tmpOutput = $tmpDir . '/audio_' . uniqid() . '.mp3';
+
+                $audioCmd = "yt-dlp -f " . escapeshellarg($format) . " -o " . escapeshellarg($tmpAudio) . " " . escapeshellarg($videoUrl) . " --no-warnings --no-playlist --no-check-certificate --progress-template '%(progress._percent_str)s' --newline";
+                Log::info('Downloading audio', ['command' => $audioCmd]);
+                $process = popen($audioCmd . " 2>&1", "r");
+                if (!$process) {
+                    throw new \Exception('Не удалось запустить процесс скачивания аудио');
+                }
+                while (!feof($process)) {
+                    $line = fgets($process);
+                    if ($line !== false) {
+                        Log::info('Audio download progress', ['output' => trim($line)]);
+                        if (preg_match('/(\d+\.\d+)%/', $line, $matches)) {
+                            $progress = (int)$matches[1];
+                            $task->progress = $progress;
+                            $task->save();
+                        }
+                    }
+                }
+                pclose($process);
+
+                // Конвертируем в mp3
+                $ffmpegCmd = "ffmpeg -y -i " . escapeshellarg($tmpAudio) . " -vn -ar 44100 -ac 2 -b:a 192k " . escapeshellarg($tmpOutput) . " 2>&1";
+                Log::info('Converting to mp3', ['command' => $ffmpegCmd]);
+                shell_exec($ffmpegCmd);
+
+                if (!file_exists($tmpOutput) || filesize($tmpOutput) === 0) {
+                    @unlink($tmpAudio);
+                    throw new \Exception('Не удалось конвертировать аудио в MP3');
+                }
+
+                @unlink($tmpAudio);
+
+                // Перемещаем mp3 в downloads
+                $finalPath = 'downloads/' . basename($tmpOutput);
+                $downloadsDir = storage_path('app/downloads');
+                if (!file_exists($downloadsDir)) {
+                    mkdir($downloadsDir, 0777, true);
+                }
+                $finalFullPath = storage_path('app/' . $finalPath);
+                if (!copy($tmpOutput, $finalFullPath)) {
+                    throw new \Exception('Не удалось сохранить mp3');
+                }
+                @unlink($tmpOutput);
+
+                chmod($finalFullPath, 0664);
+                $task->file_path = $finalPath;
+                $task->progress = 100;
+                $task->status = 'finished';
+                $task->save();
+                Log::info('Audio mp3 download completed', [
+                    'taskId' => $this->taskId,
+                    'filePath' => $finalPath,
+                    'fileExists' => file_exists($finalFullPath),
+                    'fileSize' => filesize($finalFullPath),
+                    'filePerms' => substr(sprintf('%o', fileperms($finalFullPath)), -4)
+                ]);
+                return;
+            }
+
+            // === Видео+аудио (muxed) ===
+            if (
+                isset($selectedFormat['vcodec']) && $selectedFormat['vcodec'] !== 'none' &&
+                isset($selectedFormat['acodec']) && $selectedFormat['acodec'] !== 'none'
+            ) {
                 $tmpOutput = $tmpDir . '/merged_' . uniqid() . '.mp4';
                 $cmd = "yt-dlp -f " . escapeshellarg($format) . " -o " . escapeshellarg($tmpOutput) . " " . 
                        escapeshellarg($videoUrl) . " --no-warnings --no-playlist --no-check-certificate " .
                        "--progress-template '%(progress._percent_str)s' --newline";
-                
                 Log::info('Downloading video with audio', ['command' => $cmd]);
-                
                 $process = popen($cmd . " 2>&1", "r");
                 if (!$process) {
                     throw new \Exception('Не удалось запустить процесс скачивания');
                 }
-                
                 while (!feof($process)) {
                     $line = fgets($process);
                     if ($line !== false) {
@@ -110,11 +174,39 @@ class DownloadVideoJob implements ShouldQueue
                     }
                 }
                 pclose($process);
-                
                 $task->progress = 80;
                 $task->save();
-            } else {
-                // Если только видео — ищем лучший аудиоформат
+                // Перемещаем файл в постоянное хранилище
+                $finalPath = 'downloads/' . basename($tmpOutput);
+                $downloadsDir = storage_path('app/downloads');
+                if (!file_exists($downloadsDir)) {
+                    mkdir($downloadsDir, 0777, true);
+                }
+                $finalFullPath = storage_path('app/' . $finalPath);
+                if (!copy($tmpOutput, $finalFullPath)) {
+                    throw new \Exception('Не удалось сохранить файл');
+                }
+                @unlink($tmpOutput);
+                chmod($finalFullPath, 0664);
+                $task->file_path = $finalPath;
+                $task->progress = 100;
+                $task->status = 'finished';
+                $task->save();
+                Log::info('Download completed successfully', [
+                    'taskId' => $this->taskId,
+                    'filePath' => $finalPath,
+                    'fileExists' => file_exists($finalFullPath),
+                    'fileSize' => filesize($finalFullPath),
+                    'filePerms' => substr(sprintf('%o', fileperms($finalFullPath)), -4)
+                ]);
+                return;
+            }
+
+            // === Только видео (без аудио) ===
+            if (
+                isset($selectedFormat['vcodec']) && $selectedFormat['vcodec'] !== 'none' &&
+                isset($selectedFormat['acodec']) && $selectedFormat['acodec'] === 'none'
+            ) {
                 $bestAudio = null;
                 foreach ($videoInfo['formats'] as $f) {
                     if (
@@ -128,31 +220,24 @@ class DownloadVideoJob implements ShouldQueue
                         }
                     }
                 }
-                
                 if (!$bestAudio) {
                     Log::error('No suitable audio format found');
                     throw new \Exception('Не удалось найти подходящий аудиоформат');
                 }
-                
                 Log::info('Best audio format found', ['format' => $bestAudio]);
-                
                 $tmpVideo = $tmpDir . '/video_' . uniqid() . '.mp4';
                 $tmpAudio = $tmpDir . '/audio_' . uniqid() . '.m4a';
                 $tmpOutput = $tmpDir . '/merged_' . uniqid() . '.mp4';
-                
                 // Скачиваем видео
                 $videoCmd = "yt-dlp -f " . escapeshellarg($selectedFormat['format_id']) . " -o " . 
                            escapeshellarg($tmpVideo) . " " . escapeshellarg($videoUrl) . 
                            " --no-warnings --no-playlist --no-check-certificate " .
                            "--progress-template '%(progress._percent_str)s' --newline";
-                
                 Log::info('Downloading video', ['command' => $videoCmd]);
-                
                 $process = popen($videoCmd . " 2>&1", "r");
                 if (!$process) {
                     throw new \Exception('Не удалось запустить процесс скачивания видео');
                 }
-                
                 while (!feof($process)) {
                     $line = fgets($process);
                     if ($line !== false) {
@@ -165,20 +250,16 @@ class DownloadVideoJob implements ShouldQueue
                     }
                 }
                 pclose($process);
-                
                 // Скачиваем аудио
                 $audioCmd = "yt-dlp -f " . escapeshellarg($bestAudio['format_id']) . " -o " . 
                            escapeshellarg($tmpAudio) . " " . escapeshellarg($videoUrl) . 
                            " --no-warnings --no-playlist --no-check-certificate " .
                            "--progress-template '%(progress._percent_str)s' --newline";
-                
                 Log::info('Downloading audio', ['command' => $audioCmd]);
-                
                 $process = popen($audioCmd . " 2>&1", "r");
                 if (!$process) {
                     throw new \Exception('Не удалось запустить процесс скачивания аудио');
                 }
-                
                 while (!feof($process)) {
                     $line = fgets($process);
                     if ($line !== false) {
@@ -191,17 +272,13 @@ class DownloadVideoJob implements ShouldQueue
                     }
                 }
                 pclose($process);
-                
                 // Объединяем видео и аудио
                 $mergeCmd = "ffmpeg -y -i " . escapeshellarg($tmpVideo) . " -i " . 
                            escapeshellarg($tmpAudio) . " -c copy -map 0:v:0 -map 1:a:0 " . 
                            escapeshellarg($tmpOutput) . " 2>&1";
-                
                 Log::info('Merging video and audio', ['command' => $mergeCmd]);
                 $mergeOutput = shell_exec($mergeCmd);
                 Log::info('Merge output', ['output' => $mergeOutput]);
-                
-                // Проверяем результат объединения
                 if (!file_exists($tmpOutput) || filesize($tmpOutput) === 0) {
                     Log::error('Merge failed', [
                         'output' => $mergeOutput,
@@ -211,87 +288,37 @@ class DownloadVideoJob implements ShouldQueue
                     ]);
                     throw new \Exception('Не удалось объединить видео и аудио');
                 }
-                
-                // Удаляем временные файлы
                 if (file_exists($tmpVideo)) {
                     @unlink($tmpVideo);
                 }
                 if (file_exists($tmpAudio)) {
                     @unlink($tmpAudio);
                 }
-            }
-            
-            if (!file_exists($tmpOutput)) {
-                Log::error('Final file not created', ['path' => $tmpOutput]);
-                throw new \Exception('Не удалось создать итоговый файл');
-            }
-            
-            // Перемещаем файл в постоянное хранилище
-            $finalPath = 'downloads/' . basename($tmpOutput);
-            
-            // Проверяем существование директории
-            $downloadsDir = storage_path('app/downloads');
-            if (!file_exists($downloadsDir)) {
-                if (!mkdir($downloadsDir, 0777, true)) {
-                    Log::error('Failed to create downloads directory', ['path' => $downloadsDir]);
-                    throw new \Exception('Не удалось создать директорию для сохранения');
+                // Перемещаем файл в постоянное хранилище
+                $finalPath = 'downloads/' . basename($tmpOutput);
+                $downloadsDir = storage_path('app/downloads');
+                if (!file_exists($downloadsDir)) {
+                    mkdir($downloadsDir, 0777, true);
                 }
-            }
-            
-            // Проверяем права доступа
-            if (!is_writable($downloadsDir)) {
-                Log::error('Downloads directory is not writable', ['path' => $downloadsDir]);
-                throw new \Exception('Нет прав на запись в директорию');
-            }
-            
-            $finalFullPath = storage_path('app/' . $finalPath);
-            
-            // Проверяем, существует ли уже файл
-            if (file_exists($finalFullPath)) {
-                @unlink($finalFullPath);
-            }
-            
-            // Копируем файл вместо перемещения
-            if (!copy($tmpOutput, $finalFullPath)) {
-                Log::error('Failed to copy file to final location', [
-                    'from' => $tmpOutput,
-                    'to' => $finalFullPath,
-                    'from_exists' => file_exists($tmpOutput),
-                    'to_exists' => file_exists($finalFullPath),
-                    'from_perms' => file_exists($tmpOutput) ? substr(sprintf('%o', fileperms($tmpOutput)), -4) : null,
-                    'dir_perms' => substr(sprintf('%o', fileperms($downloadsDir)), -4)
+                $finalFullPath = storage_path('app/' . $finalPath);
+                if (!copy($tmpOutput, $finalFullPath)) {
+                    throw new \Exception('Не удалось сохранить файл');
+                }
+                @unlink($tmpOutput);
+                chmod($finalFullPath, 0664);
+                $task->file_path = $finalPath;
+                $task->progress = 100;
+                $task->status = 'finished';
+                $task->save();
+                Log::info('Download completed successfully', [
+                    'taskId' => $this->taskId,
+                    'filePath' => $finalPath,
+                    'fileExists' => file_exists($finalFullPath),
+                    'fileSize' => filesize($finalFullPath),
+                    'filePerms' => substr(sprintf('%o', fileperms($finalFullPath)), -4)
                 ]);
-                throw new \Exception('Не удалось сохранить файл');
+                return;
             }
-            
-            // Удаляем временный файл
-            @unlink($tmpOutput);
-            
-            // Проверяем, что файл действительно существует
-            if (!file_exists($finalFullPath)) {
-                Log::error('File not found after copy', [
-                    'path' => $finalFullPath,
-                    'dir_exists' => file_exists($downloadsDir),
-                    'dir_perms' => substr(sprintf('%o', fileperms($downloadsDir)), -4)
-                ]);
-                throw new \Exception('Файл не найден после сохранения');
-            }
-            
-            // Устанавливаем правильные права доступа
-            chmod($finalFullPath, 0664);
-            
-            $task->file_path = $finalPath;
-            $task->progress = 100;
-            $task->status = 'finished';
-            $task->save();
-            
-            Log::info('Download completed successfully', [
-                'taskId' => $this->taskId,
-                'filePath' => $finalPath,
-                'fileExists' => file_exists($finalFullPath),
-                'fileSize' => filesize($finalFullPath),
-                'filePerms' => substr(sprintf('%o', fileperms($finalFullPath)), -4)
-            ]);
             
         } catch (\Exception $e) {
             Log::error('DownloadVideoJob error', [

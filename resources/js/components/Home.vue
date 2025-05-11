@@ -16,7 +16,8 @@
                         type="text"
                         v-model="url"
                         class="form-control custom-input"
-                        placeholder="Введите ссылку на YouTube видео"
+                        placeholder="Введите ссылку на видео (YouTube, Vimeo и др.)"
+                        title="Поддерживаются ссылки с YouTube, Vimeo и других популярных видеохостингов"
                         required
                     >
                     <button type="submit" class="btn custom-download-btn mt-3 main-download-btn">
@@ -42,8 +43,10 @@
                             class="format-row-fixed format-card" 
                             :class="{'active-format-row': isActiveTask(format)}">
                             <div class="format-card-header">
-                                <span class="badge format-badge-fixed">{{ format.quality }}</span>
+                                <span class="badge format-badge-fixed" :class="{'audio-badge': format.mimeType === 'mp3'}">{{ format.quality }}</span>
                                 <span class="format-type-fixed">{{ format.mimeType }}</span>
+                                <span v-if="format.label" class="ms-2 small text-info audio-label" :class="{'center-label': format.mimeType === 'mp3'}">{{ format.label }}</span>
+                                <span v-if="format.abr" class="ms-2 small text-muted">{{ Number(format.abr).toFixed(1) }}kbps</span>
                             </div>
                             <div class="format-card-actions">
                                 <template v-if="format.download_url">
@@ -148,6 +151,39 @@ export default {
         if (this.videoData) {
             this.startPolling();
         }
+
+        // Добавляем JSON-LD разметку
+        const jsonLd = {
+            "@context": "https://schema.org",
+            "@type": "WebApplication",
+            "name": "YTLoad.ru - YouTube Downloader",
+            "description": "Скачивайте видео в HD качестве, музыку MP3 и фото с YouTube, ВКонтакте, RuTube, Shorts бесплатно и без регистрации",
+            "url": "https://ytload.ru",
+            "applicationCategory": "UtilityApplication",
+            "operatingSystem": "Web",
+            "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "RUB"
+            },
+            "featureList": [
+                "Скачивание видео с YouTube",
+                "Скачивание видео с ВКонтакте",
+                "Скачивание видео с RuTube",
+                "Скачивание видео с Shorts",
+                "Поддержка HD качества",
+                "Конвертация в MP3",
+                "Без регистрации"
+            ]
+        };
+
+        // Создаем элемент script
+        const script = document.createElement('script');
+        script.type = 'application/ld+json';
+        script.text = JSON.stringify(jsonLd);
+        
+        // Добавляем в head
+        document.head.appendChild(script);
     },
     beforeUnmount() {
         this.stopPolling();
@@ -285,7 +321,17 @@ export default {
                     // Запускаем polling после получения данных
                     this.startPolling();
                 } else {
-                    this.error = data.message || 'Произошла ошибка';
+                    // Глобальная обработка ошибок валидации
+                    if (data.errors) {
+                        const allErrors = Object.values(data.errors).flat();
+                        if (allErrors.length === 1) {
+                            this.error = allErrors[0];
+                        } else if (allErrors.length > 1) {
+                            this.error = `${allErrors[0]} (и ещё ${allErrors.length - 1} ошибка${(allErrors.length - 1) % 10 === 1 && (allErrors.length - 1) !== 11 ? '' : (allErrors.length - 1) % 10 >= 2 && (allErrors.length - 1) % 10 <= 4 && ((allErrors.length - 1) < 10 || (allErrors.length - 1) > 20) ? 'и' : ''})`;
+                        }
+                    } else {
+                        this.error = data.message || 'Произошла ошибка';
+                    }
                 }
             } catch (err) {
                 this.error = 'Ошибка соединения';
@@ -325,7 +371,7 @@ export default {
                     
                     // Обновляем формат
                     format.active_task_id = data.id;
-                    this.$router.push(`/download/${data.id}`);
+                    this.$router.push({ path: `/download/${data.id}`, query: { type: format.mimeType === 'mp3' ? 'audio' : 'video' } });
                 } else if (data.id) {
                     // Сохраняем активную задачу
                     this.activeTasks[format.itag] = data.id;
@@ -333,7 +379,7 @@ export default {
                     
                     // Обновляем формат
                     format.active_task_id = data.id;
-                    this.$router.push(`/download/${data.id}`);
+                    this.$router.push({ path: `/download/${data.id}`, query: { type: format.mimeType === 'mp3' ? 'audio' : 'video' } });
                 } else {
                     this.error = data.message || 'Не удалось запустить задачу.';
                 }
@@ -386,6 +432,54 @@ export default {
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700;400&display=swap');
 
+/* Стили для кастомного тултипа */
+.custom-input[title] {
+    position: relative;
+}
+
+.custom-input[title]:hover::after {
+    content: attr(title);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 8px 12px;
+    background: #282a36;
+    color: #f8f8f2;
+    font-size: 0.9rem;
+    border-radius: 6px;
+    white-space: nowrap;
+    z-index: 1000;
+    box-shadow: 0 4px 16px rgba(189, 147, 249, 0.2);
+    border: 1px solid #bd93f9;
+    margin-bottom: 8px;
+    font-family: 'Montserrat', 'Segoe UI', Arial, sans-serif;
+    animation: tooltipFadeIn 0.2s ease-out;
+}
+
+.custom-input[title]:hover::before {
+    content: '';
+    position: absolute;
+    bottom: calc(100% - 4px);
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 6px;
+    border-style: solid;
+    border-color: #bd93f9 transparent transparent transparent;
+    z-index: 1000;
+}
+
+@keyframes tooltipFadeIn {
+    from {
+        opacity: 0;
+        transform: translate(-50%, 8px);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, 0);
+    }
+}
+
 .main-title {
     text-align: center;
     font-family: 'Montserrat', 'Segoe UI', Arial, sans-serif;
@@ -427,23 +521,35 @@ export default {
     width: 32px;
     height: 32px;
     z-index: 2;
-    background: linear-gradient(90deg,#ff5555 0%,#ff79c6 100%);
-    border: none;
+    background: #44475a;
+    border: 2px solid #bd93f9;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 2px 8px #ff79c6b0, 0 0 4px #ff79c6a0;
-    transition: box-shadow 0.3s, transform 0.25s cubic-bezier(.4,2,.3,1), background 0.3s;
+    box-shadow: 0 2px 8px rgba(189, 147, 249, 0.3);
+    transition: all 0.25s cubic-bezier(.4,2,.3,1);
     outline: none;
-    filter: drop-shadow(0 0 4px #ff79c6a0);
     cursor: pointer;
     padding: 0;
 }
+
+.preview-close-btn span {
+    font-size: 1.4rem;
+    color: #bd93f9;
+    line-height: 1;
+    margin-top: -2px;
+    transition: all 0.25s cubic-bezier(.4,2,.3,1);
+}
+
 .preview-close-btn:hover, .preview-close-btn:focus {
-    background:linear-gradient(90deg,#ff79c6 0%,#ff5555 100%) !important;
-    transform:scale(1.12) rotate(12deg);
-    box-shadow:0 4px 16px #ff79c6a0;
+    background: #bd93f9;
+    transform: scale(1.1);
+    box-shadow: 0 4px 16px rgba(189, 147, 249, 0.4);
+}
+
+.preview-close-btn:hover span, .preview-close-btn:focus span {
+    color: #282a36;
 }
 
 .formats-title {
@@ -541,7 +647,25 @@ export default {
     border: 2px solid #ffb86c;
     background: #44475a !important;
     box-shadow: 0 4px 16px #ffb86c80;
+    padding: 0.5rem 1rem;
+    margin: -0.5rem -1rem;
+    border-radius: 12px;
 }
+.format-card-actions {
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+    gap: 0.8rem;
+    padding: 0.2rem 0;
+}
+.format-download-btn-fixed,
+.format-cancel-btn-fixed {
+    width: auto;
+    min-width: 120px;
+    margin: 0;
+    padding: 0.55rem 1.2rem;
+}
+
 .format-download-btn-fixed.btn-warning {
     background: linear-gradient(90deg, #f1fa8c 0%, #ffb86c 100%) !important;
     color: #282a36 !important;
@@ -641,10 +765,8 @@ export default {
         width: 100%;
     }
     .format-card-actions {
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-        width: 100%;
+        padding: 0.5rem 0;
+        gap: 0.8rem;
     }
     .format-download-btn-fixed,
     .format-cancel-btn-fixed {
@@ -669,6 +791,10 @@ export default {
     }
     .preview-img {
         max-height: 180px;
+    }
+    .active-format-row {
+        padding: 1rem;
+        margin: -1rem;
     }
 }
 
@@ -723,5 +849,35 @@ export default {
     .format-card:last-child {
         margin-bottom: 0;
     }
+}
+
+.text-info {
+    color: #8be9fd !important;
+}
+
+.text-muted {
+    color: #6272a4 !important;
+}
+
+.ms-2 {
+    margin-left: 0.5rem !important;
+}
+
+.small {
+    font-size: 0.875rem;
+}
+
+.audio-badge {
+    min-width: 70px;
+    text-align: center;
+}
+.center-label {
+    display: inline-block;
+    width: 80px;
+    text-align: center;
+}
+.audio-label {
+    color: #8be9fd !important;
+    font-weight: 600;
 }
 </style> 

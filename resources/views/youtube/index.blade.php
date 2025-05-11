@@ -386,6 +386,9 @@
                                 @if(isset($format['label']))
                                     <span class="ms-2 small text-info">{{ $format['label'] }}</span>
                                 @endif
+                                @if(isset($format['abr']))
+                                    <span class="ms-2 small text-muted">{{ $format['abr'] }}kbps</span>
+                                @endif
                             </div>
                             @if(isset($format['active_task_id']))
                                 <div class="d-flex gap-2">
