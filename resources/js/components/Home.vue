@@ -355,13 +355,17 @@ export default {
                 const response = await fetch('/api/download/start', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
                         'Accept': 'application/json',
+                        'Content-Type': 'application/json',
                         'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').content,
                         'X-Requested-With': 'XMLHttpRequest'
                     },
                     credentials: 'same-origin',
-                    body: JSON.stringify({ url: this.url, format: format.itag })
+                    body: JSON.stringify({
+                        url: this.url,
+                        format: format.itag,
+                        type: format.mimeType === 'mp3' ? 'audio' : 'video'
+                    })
                 });
                 const data = await response.json();
                 if (response.ok && data.id) {

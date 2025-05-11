@@ -8,6 +8,6 @@ class DownloadTask extends Model
 {
     protected $table = 'download_tasks';
     protected $fillable = [
-        'url', 'format', 'status', 'progress', 'file_path', 'error'
+        'url', 'format', 'type', 'status', 'progress', 'file_path', 'error'
     ];
 } 

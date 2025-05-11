@@ -41,8 +41,9 @@ class DownloadVideoJob implements ShouldQueue
         try {
             $videoUrl = $task->url;
             $format = $task->format;
+            $type = $task->type;
             
-            Log::info('Getting video info', ['url' => $videoUrl, 'format' => $format]);
+            Log::info('Getting video info', ['url' => $videoUrl, 'format' => $format, 'type' => $type]);
             
             // Получаем информацию о видео
             $infoCommand = "yt-dlp -j " . escapeshellarg($videoUrl);
@@ -83,10 +84,10 @@ class DownloadVideoJob implements ShouldQueue
             }
             
             // === Только аудио ===
-            if (
+            if ($type === 'audio' || (
                 isset($selectedFormat['vcodec']) && $selectedFormat['vcodec'] === 'none' &&
                 isset($selectedFormat['acodec']) && $selectedFormat['acodec'] !== 'none'
-            ) {
+            )) {
                 $tmpAudio = $tmpDir . '/audio_' . uniqid() . '.m4a';
                 $tmpOutput = $tmpDir . '/audio_' . uniqid() . '.mp3';
 

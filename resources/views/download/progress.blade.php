@@ -140,7 +140,7 @@
     <div class="container" style="max-width: 600px; margin: 40px auto;">
         <div class="card">
             <div class="card-body text-center">
-                <h3>Генерация видео...</h3>
+                <h3>{{ $task->type === 'audio' ? 'Генерация аудио...' : 'Генерация видео...' }}</h3>
                 <div id="progress-block">
                     <div class="progress mb-3" style="height: 30px;">
                         <div id="progress-bar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%">0%</div>
@@ -148,7 +148,7 @@
                     <div id="status-text">Ожидание...</div>
                 </div>
                 <div id="download-block" style="display:none;">
-                    <a id="download-link" href="#" class="btn btn-success btn-lg">Скачать видео</a>
+                    <a id="download-link" href="#" class="btn btn-success btn-lg">{{ $task->type === 'audio' ? 'Скачать аудио' : 'Скачать видео' }}</a>
                 </div>
                 <div id="error-block" class="alert alert-danger mt-3" style="display:none;"></div>
                 <div id="cancelled-block" style="display:none;">

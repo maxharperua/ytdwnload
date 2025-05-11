@@ -16,10 +16,12 @@ class DownloadController extends Controller
         $request->validate([
             'url' => 'required|url',
             'format' => 'required|string',
+            'type' => 'required|in:video,audio'
         ]);
         $task = DownloadTask::create([
             'url' => $request->url,
             'format' => $request->format,
+            'type' => $request->type,
             'status' => 'pending',
             'progress' => 0,
         ]);
@@ -28,7 +30,7 @@ class DownloadController extends Controller
         if ($request->expectsJson() || $request->ajax() || $request->is('api/*')) {
             return response()->json(['id' => $task->id]);
         }
-        return redirect()->route('download.progress', ['id' => $task->id]);
+        return redirect()->route('download.progress', ['id' => $task->id, 'type' => $request->type]);
     }
 
     // Страница прогресса
