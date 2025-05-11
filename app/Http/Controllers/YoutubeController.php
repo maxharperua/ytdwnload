@@ -134,15 +134,26 @@ class YoutubeController extends Controller
                     isset($format['vcodec']) && $format['vcodec'] === 'none' &&
                     in_array($format['ext'], ['m4a', 'mp4'])
                 ) {
-                    // Для аудио можно оставить все варианты
-                    $audio_only[] = [
-                        'itag' => $format['format_id'],
-                        'quality' => $format['format_note'] ?? ($format['abr'] ?? '') . ' аудио',
-                        'mimeType' => $format['ext'],
-                        'url' => $format['url'],
-                        'label' => 'Только звук',
-                        'tbr' => $format['tbr'] ?? 0
-                    ];
+                    // Сохраняем только лучший аудиоформат (по битрейту)
+                    if (!isset($audio_only) || (isset($format['abr']) && $format['abr'] > ($audio_only['abr'] ?? 0))) {
+                        $audio_only = [
+                            'itag' => $format['format_id'],
+                            'quality' => 'Аудио',
+                            'mimeType' => 'mp3', // Изменяем на mp3
+                            'url' => $format['url'],
+                            'abr' => $format['abr'] ?? 0,
+                            'label' => 'Только звук'
+                        ];
+                    }
+                    // Проверяем активную задачу
+                    $activeTask = DownloadTask::where('url', $request->url)
+                        ->where('format', $format['format_id'])
+                        ->whereIn('status', ['pending', 'processing'])
+                        ->orderByDesc('created_at')
+                        ->first();
+                    if ($activeTask) {
+                        $audio_only['active_task_id'] = $activeTask->id;
+                    }
                 }
             }
 
@@ -156,10 +167,10 @@ class YoutubeController extends Controller
                     $formats[] = $item;
                 }
             }
-            // Аудио-форматы можно добавить в конец, если нужно
-            // foreach ($audio_only as $item) {
-            //     $formats[] = $item;
-            // }
+            // Добавляем аудио-формат MP3 в конец списка, если найден
+            if (!empty($audio_only)) {
+                $formats[] = $audio_only;
+            }
 
             $thumbnail = $videoInfo['thumbnail'] ?? null;
 
@@ -270,14 +281,31 @@ class YoutubeController extends Controller
                 return response()->download($tmpOutput, 'video.mp4')->deleteFileAfterSend(true);
             }
 
-            // Если выбран только аудиоформат — просто редирект
+            // Если выбран только аудиоформат — конвертируем в MP3
             if (isset($selectedFormat['acodec']) && $selectedFormat['acodec'] !== 'none' && isset($selectedFormat['vcodec']) && $selectedFormat['vcodec'] === 'none') {
-                $command = "yt-dlp -f " . escapeshellarg($format) . " -g " . escapeshellarg($videoUrl);
-                $url = trim(shell_exec($command));
-                if (!$url) {
-                    throw new \Exception('Не удалось получить ссылку на аудио');
+                // Создаем временные файлы
+                $tmpAudio = "/tmp/audio_" . uniqid() . ".m4a";
+                $tmpOutput = "/tmp/audio_" . uniqid() . ".mp3";
+
+                // Скачиваем аудио
+                $audioCmd = "yt-dlp -f " . escapeshellarg($format) . " -o " . escapeshellarg($tmpAudio) . " " . escapeshellarg($videoUrl);
+                shell_exec($audioCmd);
+
+                // Конвертируем в MP3
+                $ffmpegCmd = "ffmpeg -y -i " . escapeshellarg($tmpAudio) . " -vn -ar 44100 -ac 2 -b:a 192k " . escapeshellarg($tmpOutput) . " 2>&1";
+                shell_exec($ffmpegCmd);
+
+                // Проверяем результат конвертации
+                if (!file_exists($tmpOutput) || filesize($tmpOutput) === 0) {
+                    // Удаляем временные файлы
+                    @unlink($tmpAudio);
+                    throw new \Exception('Не удалось конвертировать аудио в MP3');
                 }
-                return redirect($url);
+
+                // Удаляем временный файл
+                @unlink($tmpAudio);
+
+                return response()->download($tmpOutput, 'audio.mp3')->deleteFileAfterSend(true);
             }
 
             throw new \Exception('Неизвестный тип формата');

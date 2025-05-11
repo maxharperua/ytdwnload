@@ -43,8 +43,10 @@
                             class="format-row-fixed format-card" 
                             :class="{'active-format-row': isActiveTask(format)}">
                             <div class="format-card-header">
-                                <span class="badge format-badge-fixed">{{ format.quality }}</span>
+                                <span class="badge format-badge-fixed" :class="{'audio-badge': format.mimeType === 'mp3'}">{{ format.quality }}</span>
                                 <span class="format-type-fixed">{{ format.mimeType }}</span>
+                                <span v-if="format.label" class="ms-2 small text-info audio-label" :class="{'center-label': format.mimeType === 'mp3'}">{{ format.label }}</span>
+                                <span v-if="format.abr" class="ms-2 small text-muted">{{ Number(format.abr).toFixed(1) }}kbps</span>
                             </div>
                             <div class="format-card-actions">
                                 <template v-if="format.download_url">
@@ -369,7 +371,7 @@ export default {
                     
                     // Обновляем формат
                     format.active_task_id = data.id;
-                    this.$router.push(`/download/${data.id}`);
+                    this.$router.push({ path: `/download/${data.id}`, query: { type: format.mimeType === 'mp3' ? 'audio' : 'video' } });
                 } else if (data.id) {
                     // Сохраняем активную задачу
                     this.activeTasks[format.itag] = data.id;
@@ -377,7 +379,7 @@ export default {
                     
                     // Обновляем формат
                     format.active_task_id = data.id;
-                    this.$router.push(`/download/${data.id}`);
+                    this.$router.push({ path: `/download/${data.id}`, query: { type: format.mimeType === 'mp3' ? 'audio' : 'video' } });
                 } else {
                     this.error = data.message || 'Не удалось запустить задачу.';
                 }
@@ -847,5 +849,35 @@ export default {
     .format-card:last-child {
         margin-bottom: 0;
     }
+}
+
+.text-info {
+    color: #8be9fd !important;
+}
+
+.text-muted {
+    color: #6272a4 !important;
+}
+
+.ms-2 {
+    margin-left: 0.5rem !important;
+}
+
+.small {
+    font-size: 0.875rem;
+}
+
+.audio-badge {
+    min-width: 70px;
+    text-align: center;
+}
+.center-label {
+    display: inline-block;
+    width: 80px;
+    text-align: center;
+}
+.audio-label {
+    color: #8be9fd !important;
+    font-weight: 600;
 }
 </style> 
